@@ -1,0 +1,833 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>积分管理 MVP UI（无存储版）</title>
+  <style>
+    :root{
+      --bg:#0b1220; --card:#111a2e; --card2:#0f1730;
+      --text:#e8eefc; --muted:#a7b2d6; --line:#223055;
+      --brand:#6aa9ff; --ok:#39d98a; --bad:#ff6b6b; --warn:#ffd166;
+      --shadow: 0 10px 24px rgba(0,0,0,.35);
+      --radius: 14px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:var(--sans);
+      background: radial-gradient(1200px 600px at 20% 0%, rgba(106,169,255,.22), transparent 55%),
+                  radial-gradient(900px 500px at 80% 10%, rgba(57,217,138,.16), transparent 60%),
+                  var(--bg);
+      color:var(--text);
+    }
+    header{
+      padding:18px 20px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      background: rgba(10,16,32,.65);
+      backdrop-filter: blur(10px);
+      position: sticky; top:0; z-index:10;
+    }
+    header .row{display:flex; gap:14px; align-items:center; justify-content:space-between; flex-wrap:wrap;}
+    .title{font-size:18px; font-weight:700; letter-spacing:.2px}
+    .subtitle{color:var(--muted); font-size:12px}
+    .pill{
+      display:inline-flex; gap:8px; align-items:center;
+      padding:8px 10px; border-radius:999px;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.08);
+      color:var(--muted); font-size:12px;
+    }
+    .container{max-width:1200px; margin:0 auto; padding:18px 18px 30px;}
+    .grid{display:grid; grid-template-columns: 1.1fr .9fr; gap:14px;}
+    @media (max-width: 980px){ .grid{grid-template-columns: 1fr; } }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border: 1px solid rgba(255,255,255,.08);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      overflow:hidden;
+    }
+    .card .hd{
+      padding:14px 14px 12px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      display:flex; gap:10px; align-items:flex-end; justify-content:space-between; flex-wrap:wrap;
+    }
+    .card .hd h2{margin:0; font-size:14px; letter-spacing:.2px}
+    .card .bd{padding:14px;}
+    .tabs{display:flex; gap:8px; flex-wrap:wrap}
+    .tab{
+      padding:8px 10px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.05);
+      color: var(--muted);
+      cursor:pointer; user-select:none;
+      font-size:12px; font-weight:600;
+    }
+    .tab.active{
+      background: rgba(106,169,255,.18);
+      border-color: rgba(106,169,255,.35);
+      color: var(--text);
+    }
+
+    .controls{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+    input[type="search"], input[type="number"], input[type="text"], select, textarea{
+      width:100%;
+      padding:10px 10px;
+      border-radius: 10px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.22);
+      color: var(--text);
+      outline:none;
+    }
+    textarea{min-height:72px; resize:vertical}
+    label{display:block; font-size:12px; color:var(--muted); margin:10px 0 6px}
+    .row2{display:grid; grid-template-columns: 1fr 1fr; gap:10px}
+    @media (max-width: 520px){ .row2{grid-template-columns: 1fr} }
+
+    .btnbar{display:flex; gap:10px; flex-wrap:wrap; margin-top:12px}
+    button{
+      border:none; cursor:pointer;
+      padding:10px 12px; border-radius:12px;
+      font-weight:700; color:var(--text);
+      background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.10);
+    }
+    button.primary{background: rgba(106,169,255,.22); border-color: rgba(106,169,255,.35)}
+    button.danger{background: rgba(255,107,107,.18); border-color: rgba(255,107,107,.35)}
+    button.ghost{background: transparent}
+    button:disabled{opacity:.5; cursor:not-allowed}
+
+    .list{display:flex; flex-direction:column; gap:8px}
+    .student{
+      display:flex; gap:10px; justify-content:space-between; align-items:center;
+      padding:10px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(0,0,0,.16);
+      cursor:pointer;
+    }
+    .student:hover{border-color: rgba(106,169,255,.30)}
+    .student.active{
+      border-color: rgba(106,169,255,.55);
+      background: rgba(106,169,255,.10);
+    }
+    .student .name{font-weight:800}
+    .student .meta{font-size:12px; color:var(--muted)}
+    .score{
+      font-family:var(--mono);
+      padding:6px 10px; border-radius: 999px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.06);
+      min-width: 64px; text-align:center;
+    }
+
+    .rankgrid{display:grid; grid-template-columns: 1fr; gap:8px}
+    .rankitem{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      padding:10px 10px;
+      border-radius: 12px;
+      border:1px solid rgba(255,255,255,.08);
+      background: rgba(0,0,0,.14);
+    }
+    .rankitem .left{display:flex; gap:10px; align-items:center}
+    .badge{
+      width:26px; height:26px; border-radius: 9px;
+      display:grid; place-items:center;
+      font-family:var(--mono); font-size:12px;
+      background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.10);
+      color: var(--muted);
+    }
+    .badge.top{background: rgba(255,209,102,.14); border-color: rgba(255,209,102,.35); color: var(--text)}
+    .muted{color:var(--muted)}
+    .small{font-size:12px}
+    .mono{font-family:var(--mono)}
+    .hr{height:1px; background: rgba(255,255,255,.08); margin:12px 0}
+    .table{
+      width:100%;
+      border-collapse: collapse;
+      font-size:12px;
+    }
+    .table th, .table td{
+      text-align:left;
+      padding:10px 8px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      vertical-align:top;
+    }
+    .table th{color:var(--muted); font-weight:700}
+    .delta.pos{color:var(--ok); font-weight:800}
+    .delta.neg{color:var(--bad); font-weight:800}
+    .tag{
+      display:inline-flex; align-items:center;
+      padding:3px 8px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.06);
+      color: var(--muted);
+      font-size:11px;
+      margin-right:6px;
+      white-space:nowrap;
+    }
+    .toast{
+      position: fixed; right: 16px; bottom: 16px;
+      background: rgba(17,26,46,.92);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius: 14px;
+      padding: 10px 12px;
+      box-shadow: var(--shadow);
+      max-width: 360px;
+      opacity:0; transform: translateY(10px);
+      transition: .18s ease;
+      pointer-events:none;
+    }
+    .toast.show{opacity:1; transform: translateY(0)}
+    .toast .t{font-weight:800; margin:0 0 4px; font-size:13px}
+    .toast .d{margin:0; color:var(--muted); font-size:12px}
+    .hint{color:var(--muted); font-size:12px; line-height:1.5}
+  </style>
+</head>
+
+<body>
+<header>
+  <div class="row">
+    <div>
+      <div class="title">学生积分维护（MVP UI）</div>
+      <div class="subtitle">无登录 · 无存储 · 仅搭 UI/交互（只有下载还没有上传）</div>
+    </div>
+    <div class="pill">
+      <span>操作员</span>
+      <strong id="operatorName">Teacher</strong>
+      <span class="muted">·</span>
+      <span class="muted">当前年级</span>
+      <strong id="activeGradeLabel">G1</strong>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="grid">
+
+    <!-- Left: Student list -->
+    <section class="card">
+      <div class="hd">
+        <div>
+          <h2>学生列表</h2>
+          <div class="small muted">点击学生名字便会打开加扣分面板。</div>
+        </div>
+        <div class="tabs" id="gradeTabs"></div>
+      </div>
+
+      <div class="bd">
+        <div class="controls">
+          <div style="flex:1; min-width:220px;">
+            <input id="searchBox" type="search" placeholder="搜索：姓名 / 学号 / 班级（例如：G2-1）" />
+          </div>
+          <button class="ghost" id="clearSearchBtn">清空</button>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="list" id="studentList"></div>
+
+        <div class="hr"></div>
+      </div>
+    </section>
+
+    <!-- Right: Actions, ranking, events -->
+    <section class="card">
+      <div class="hd">
+        <div>
+          <h2>加/扣分面板</h2>
+          <div class="small muted">流水不可删除，仅可更正（编辑备注/原因/分数）。</div>
+        </div>
+        <button id="resetDemoBtn" class="ghost" title="重置为初始示例数据（仅本页）">重置示例</button>
+      </div>
+
+      <div class="bd" id="actionPanel">
+        <div class="hint" id="noSelectionHint">
+          先从左边选择一个学生，然后在这里加/扣分。
+        </div>
+
+        <div id="selectedCard" style="display:none;">
+          <div class="card" style="box-shadow:none; border-radius:14px; background: rgba(0,0,0,.16); border:1px solid rgba(255,255,255,.08);">
+            <div class="bd" style="padding:12px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+                <div>
+                  <div class="name" id="selName" style="font-size:16px; font-weight:900;"></div>
+                  <div class="meta" id="selMeta"></div>
+                </div>
+                <div class="score" id="selScore">0</div>
+              </div>
+            </div>
+          </div>
+
+          <label>分数变动（delta）</label>
+          <div class="row2">
+            <div>
+              <select id="deltaSign">
+                <option value="add">加分（+）</option>
+                <option value="sub">扣分（-）</option>
+              </select>
+            </div>
+            <div>
+              <input id="deltaValue" type="number" min="1" step="1" value="1" />
+            </div>
+          </div>
+
+          <label>原因分类（type）</label>
+          <select id="reasonType">
+            <option value="课堂表现">课堂表现</option>
+            <option value="作业/学习习惯">作业/学习习惯</option>
+            <option value="纪律/行为">纪律/行为</option>
+            <option value="活动/服务">活动/服务</option>
+            <option value="其它">其它</option>
+          </select>
+
+          <label>备注（可选）</label>
+          <textarea id="note" placeholder="例如：帮助同学整理教室 / 上课说话 / 主动分享解题…"></textarea>
+
+          <label>操作员（operator）</label>
+          <input id="operatorInput" type="text" value="Teacher" />
+
+          <div class="btnbar">
+            <button class="primary" id="submitBtn">提交流水</button>
+            <button class="ghost" id="quickPlus5">+5</button>
+            <button class="ghost" id="quickMinus2">-2</button>
+          </div>
+
+          <div class="hr"></div>
+
+          <div>
+            <h3 style="margin:0 0 8px; font-size:13px;">年级排名（仅老师可见）</h3>
+            <div class="rankgrid" id="rankList"></div>
+          </div>
+
+          <div class="hr"></div>
+
+          <div>
+            <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+              <div>
+                <h3 style="margin:0; font-size:13px;">积分流水（Point events）</h3>
+                <div class="small muted">不可删除；点“更正”可编辑 delta/type/备注。</div>
+              </div>
+              <div class="small muted">
+                显示：当前年级 · 最近在前
+              </div>
+            </div>
+
+            <div style="overflow:auto; margin-top:10px;">
+              <table class="table" id="eventTable">
+                <thead>
+                  <tr>
+                    <th style="min-width:140px;">时间</th>
+                    <th style="min-width:140px;">学生</th>
+                    <th style="min-width:90px;">变动</th>
+                    <th style="min-width:140px;">原因</th>
+                    <th>备注</th>
+                    <th style="min-width:110px;">操作员</th>
+                    <th style="min-width:110px;">操作</th>
+                  </tr>
+                </thead>
+                <tbody id="eventTbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <p class="t" id="toastTitle">提示</p>
+  <p class="d" id="toastDesc">…</p>
+</div>
+
+<script>
+  /***********************
+   * Demo data (in-memory)
+   ***********************/
+  const gradeLabels = ["G1", "G2", "G3", "G4"];
+
+  // 你之后接 spreadsheet 时：students 从“读取接口”来，events 从“流水表”来
+  let students = [];
+
+  // Point events: time, id, delta, type, description(optional), operator
+  let events = [];
+
+  const initialSnapshot = () => ({
+    students: JSON.parse(JSON.stringify(students)),
+    events: JSON.parse(JSON.stringify(events))
+  });
+  let snapshot = initialSnapshot();
+
+  /***********************
+   * State
+   ***********************/
+  let activeGrade = "G1";
+  let selectedStudentId = null;
+
+  /***********************
+   * DOM refs
+   ***********************/
+  const gradeTabsEl = document.getElementById("gradeTabs");
+  const activeGradeLabelEl = document.getElementById("activeGradeLabel");
+  const studentListEl = document.getElementById("studentList");
+  const searchBoxEl = document.getElementById("searchBox");
+  const clearSearchBtn = document.getElementById("clearSearchBtn");
+
+  const noSelectionHintEl = document.getElementById("noSelectionHint");
+  const selectedCardEl = document.getElementById("selectedCard");
+  const selNameEl = document.getElementById("selName");
+  const selMetaEl = document.getElementById("selMeta");
+  const selScoreEl = document.getElementById("selScore");
+
+  const deltaSignEl = document.getElementById("deltaSign");
+  const deltaValueEl = document.getElementById("deltaValue");
+  const reasonTypeEl = document.getElementById("reasonType");
+  const noteEl = document.getElementById("note");
+  const operatorInputEl = document.getElementById("operatorInput");
+
+  const submitBtn = document.getElementById("submitBtn");
+  const quickPlus5Btn = document.getElementById("quickPlus5");
+  const quickMinus2Btn = document.getElementById("quickMinus2");
+
+  const rankListEl = document.getElementById("rankList");
+  const eventTbodyEl = document.getElementById("eventTbody");
+  const resetDemoBtn = document.getElementById("resetDemoBtn");
+
+  const toastEl = document.getElementById("toast");
+  const toastTitleEl = document.getElementById("toastTitle");
+  const toastDescEl = document.getElementById("toastDesc");
+
+  /***********************
+   * Helpers: 小但重复且不属于核心逻辑的function
+   ***********************/
+  function toast(title, desc){ //执行完操作的提示小弹窗
+    toastTitleEl.textContent = title;
+    toastDescEl.textContent = desc || "";
+    toastEl.classList.add("show");
+    setTimeout(()=>toastEl.classList.remove("show"), 2200); //显示一段时间就消失掉
+  }
+
+  function fmtTime(iso){ //计算机时间 -> 人类可读时间
+    const d = new Date(iso);
+    const pad = n => String(n).padStart(2,"0");
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  }
+
+  function getStudentById(id){ return students.find(s => s.id === id) || null; } //通过id映射到学生
+
+  function computeRanking(grade){ //根据年纪制定一个根据积分排名的rank
+    const arr = students.filter(s => s.grade === grade).slice();
+    arr.sort((a,b)=> b.points - a.points || a.name.localeCompare(b.name));
+    return arr;
+  }
+
+  function applyEventToStudent(student_id, delta){ //给student加分
+    const st = getStudentById(student_id);
+    if(!st) return;
+    st.points += delta;
+  }
+
+  function rebuildPointsFromEvents(){ 
+    // 为了支持“更正”不出 bug：我们这里直接重算（数据量很小，MVP 完全够用）
+    const map = new Map(students.map(s => [s.id, 0]));
+    for(const e of events){
+      map.set(e.student_id, (map.get(e.student_id) || 0) + e.delta);
+    }
+    // 初始化回“0”，然后加上 events 累计（你之后接入后端可以改成后端算）
+    for(const s of students){
+      s.points = 0;
+    }
+    for(const [sid, sum] of map.entries()){
+      const s = getStudentById(sid);
+      if(s) s.points = sum;
+    }
+  }
+
+  function resetToSnapshot(){
+    students = JSON.parse(JSON.stringify(snapshot.students));
+    events = JSON.parse(JSON.stringify(snapshot.events));
+    activeGrade = "G1";
+    selectedStudentId = null;
+    searchBoxEl.value = "";
+    renderAll();
+    toast("已重置", "恢复到初始示例数据。");
+  }
+  /*********************** 
+   * Connect to the spreadsheet
+   ***********************/
+  const API = "https://script.google.com/macros/s/AKfycbwhk23YntQ2bvr8fRjFuL1YZ-3LBAH_8HOq6NsDFdp1NUL02zAo6u2NkeQeG-Lf5HXj/exec";
+
+  async function loadStudents(){
+    const r = await fetch(`${API}?action=students&t=${Date.now()}`);
+    if(!r.ok) throw new Error(`students HTTP ${r.status}`);
+    return await r.json();
+  }
+  async function loadEvents(){
+    const r = await fetch(`${API}?action=events&t=${Date.now()}`);
+    if(!r.ok) throw new Error(`events HTTP ${r.status}`);
+    return await r.json();
+  }
+
+  async function appendEventToSheet(e){
+      const r = await fetch(API, {
+        method: "POST",
+        headers: {"Content-Type":"text/plain;charset=utf-8"},
+        body: JSON.stringify({ action:"appendEvent", event: e })
+      });
+      if(!r.ok) throw new Error(`appendEvent HTTP ${r.status}`);
+      return await r.json().catch(()=> ({}));
+  }
+  async function updateEventInSheet(event_id, patch){
+    const r = await fetch(API, {
+      method: "POST",
+      headers: {"Content-Type":"text/plain;charset=utf-8"},
+      body: JSON.stringify({ action:"updateEvent", event_id, patch })
+    });
+    if(!r.ok) throw new Error(`updateEvent HTTP ${r.status}`);
+    return await r.json().catch(()=> ({}));
+  }
+
+  async function initFromSheet(){
+    try{
+      // 1) 拉取
+      const sRes = await loadStudents();
+      const eRes = await loadEvents();
+
+      // 2) 兼容：既支持直接数组，也支持 {data:[...]} / {students:[...]} 这类包装
+      let sArr = Array.isArray(sRes) ? sRes : (sRes.data ?? sRes.students ?? []);
+      let eArr = Array.isArray(eRes) ? eRes : (eRes.data ?? eRes.events ?? []);
+
+      // 3) 统一类型：id/student_id 一律转成 string；delta 转 number
+      students = sArr.map(s => ({
+        id: String(s.id),
+        grade: String(s.grade),
+        class: String(s.class),
+        name: String(s.name),
+        points: Number(s.points || 0),
+      }));
+
+      events = eArr.map(e => ({
+        event_id: String(e.event_id),
+        time: String(e.time),
+        student_id: String(e.student_id),
+        delta: Number(e.delta),
+        type: String(e.type || ""),
+        description: String(e.description || ""),
+        operator: String(e.operator || ""),
+      }));
+
+      // 4) 重算 + 渲染
+      rebuildPointsFromEvents();
+      snapshot = initialSnapshot();
+      renderAll();
+
+      // 5) 给你一个肉眼可见的成功提示（方便你确认“确实读到了”）
+      toast("已同步", `students=${students.length}, events=${events.length}`);
+    }catch(err){
+      console.error(err);
+      // 失败时也 render 一下，至少能看到“没有匹配的学生”
+      students = [];
+      events = [];
+      renderAll();
+      toast("同步失败", String(err));
+    }
+  }
+
+
+
+  /***********************
+   * Render
+   ***********************/
+  function renderTabs(){
+    gradeTabsEl.innerHTML = "";
+    gradeLabels.forEach(g => {
+      const btn = document.createElement("div");
+      btn.className = "tab" + (g === activeGrade ? " active" : "");
+      btn.textContent = g;
+      btn.onclick = () => {
+        activeGrade = g;
+        activeGradeLabelEl.textContent = g;
+        selectedStudentId = null;
+        renderAll();
+      };
+      gradeTabsEl.appendChild(btn);
+    });
+    activeGradeLabelEl.textContent = activeGrade;
+  }
+
+  function renderStudentList(){ //渲染学生列表
+    const q = searchBoxEl.value.trim().toLowerCase();
+    //先筛选数据，确认要展示的学生有哪些：根据grade和搜索框进行筛选
+    const list = students //在这里整合进了搜索框输入的东西进行filter
+      .filter(s => s.grade === activeGrade)
+      .filter(s => {
+        if(!q) return true;
+        return (
+          s.name.toLowerCase().includes(q) ||
+          s.id.toLowerCase().includes(q) ||
+          s.class.toLowerCase().includes(q)
+        );
+      })
+      .sort((a,b)=> b.points - a.points || a.name.localeCompare(b.name));
+
+    studentListEl.innerHTML = "";
+    if(list.length === 0){ 
+      const empty = document.createElement("div");
+      empty.className = "hint";
+      empty.textContent = "没有匹配的学生。";
+      studentListEl.appendChild(empty);
+      return;
+    }
+
+    for(const s of list){ //根据studentlist数据结构里的数据来创建html代码，在网页让渲染出内容
+      const row = document.createElement("div");
+      row.className = "student" + (s.id === selectedStudentId ? " active" : "");
+      row.onclick = () => { //点击student打开修改积分的表单
+        selectedStudentId = s.id;
+        renderAll(); //重新渲染
+      };
+      const left = document.createElement("div");
+      left.innerHTML = `
+        <div class="name">${s.name}</div>
+        <div class="meta">${s.grade} · ${s.class} · ID ${s.id}</div>
+      `;
+      const right = document.createElement("div");
+      right.className = "score";
+      right.textContent = String(s.points);
+      row.appendChild(left);
+      row.appendChild(right);
+      studentListEl.appendChild(row);
+    }
+  }
+
+  function renderSelectedPanel(){
+    if(!selectedStudentId){
+      noSelectionHintEl.style.display = "block";
+      selectedCardEl.style.display = "none";
+      return;
+    }
+    const s = getStudentById(selectedStudentId);
+    if(!s){
+      noSelectionHintEl.style.display = "block";
+      selectedCardEl.style.display = "none";
+      return;
+    }
+
+    noSelectionHintEl.style.display = "none";
+    selectedCardEl.style.display = "block";
+
+    //在已经搭好的html框架上填入name，point，id等信息
+    selNameEl.textContent = s.name;
+    selMetaEl.textContent = `${s.grade} · ${s.class} · ID ${s.id}`;
+    selScoreEl.textContent = String(s.points);
+
+    // ranking
+    const rank = computeRanking(activeGrade).slice(0, 8);
+    rankListEl.innerHTML = "";
+    rank.forEach((st, idx) => {
+      const item = document.createElement("div");
+      item.className = "rankitem";
+      const badgeClass = idx < 3 ? "badge top" : "badge";
+      item.innerHTML = `
+        <div class="left">
+          <div class="${badgeClass}">${idx+1}</div>
+          <div>
+            <div style="font-weight:800">${st.name}</div>
+            <div class="small muted">${st.class} · ID ${st.id}</div>
+          </div>
+        </div>
+        <div class="score">${st.points}</div>
+      `;
+      rankListEl.appendChild(item);
+    });
+
+    // events table for grade
+    // 这里和从studentlist里渲染思想一样，先从所有的point_event里筛选数据，然后根据每一条数据进行渲染
+    const gradeStudentIds = new Set(students.filter(x=>x.grade===activeGrade).map(x=>x.id));
+    const rows = events
+      .filter(e => gradeStudentIds.has(e.student_id))
+      .slice()
+      .sort((a,b)=> new Date(b.time) - new Date(a.time));
+
+    eventTbodyEl.innerHTML = "";
+    if(rows.length === 0){
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td colspan="7" class="muted">该年级暂无流水。</td>`;
+      eventTbodyEl.appendChild(tr);
+      return;
+    }
+
+    //渲染每一条数据
+    for(const e of rows){
+      const st = getStudentById(e.student_id);
+      const deltaClass = e.delta >= 0 ? "pos" : "neg";
+      const deltaText = e.delta >= 0 ? `+${e.delta}` : `${e.delta}`;
+      const isSel = (e.student_id === selectedStudentId);
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="mono">${fmtTime(e.time)}</td>
+        <td>
+          <span class="tag">${st ? st.name : e.student_id}</span>
+          <span class="muted">${st ? st.class : ""}</span>
+          ${isSel ? `<span class="tag" style="border-color: rgba(106,169,255,.35); background: rgba(106,169,255,.12); color: var(--text);">当前选择</span>` : ""}
+        </td>
+        <td class="delta ${deltaClass} mono">${deltaText}</td>
+        <td><span class="tag">${e.type}</span></td>
+        <td class="muted">${escapeHtml(e.description || "")}</td>
+        <td class="muted">${escapeHtml(e.operator || "")}</td>
+        <td>
+          <button class="ghost" data-act="edit" data-id="${e.event_id}">更正</button>
+        </td>
+      `;
+      eventTbodyEl.appendChild(tr);
+    }
+
+    // bind edit buttons
+    //这里是绑定那个更正按钮
+    [...eventTbodyEl.querySelectorAll('button[data-act="edit"]')].forEach(btn=>{
+      btn.onclick = () => openEditPrompt(btn.getAttribute("data-id"));
+    });
+  }
+
+  function escapeHtml(str){
+    return String(str)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  function renderAll(){ //每当出发一次操作的时候都重新渲染所有内容
+    renderTabs();
+    renderStudentList();
+    renderSelectedPanel();
+  }
+
+  /***********************
+   * Actions
+   ***********************/
+  async function submitEvent(deltaOverride=null){
+    if(!selectedStudentId){
+      toast("先选学生", "左边点一个学生再操作。");
+      return;
+    }
+    const sign = deltaSignEl.value;
+    const val = Math.max(1, parseInt(deltaValueEl.value || "1", 10));
+    let delta = (sign === "add" ? +val : -val);
+    if(deltaOverride !== null) delta = deltaOverride;
+
+    const type = reasonTypeEl.value;
+    const desc = noteEl.value.trim();
+    const operator = (operatorInputEl.value || "Teacher").trim();
+
+    const e = { //Assemble all the data
+      event_id: crypto.randomUUID(),
+      time: new Date().toISOString(),
+      student_id: selectedStudentId,
+      delta,
+      type,
+      description: desc || "",
+      operator
+    };
+    events.push(e);
+
+    // For simplicity: add it directly to student.points; to improve consistency, 
+    // we can also choose to recalculate each time.
+    applyEventToStudent(selectedStudentId, delta);
+
+    // UI reset
+    noteEl.value = "";
+    deltaValueEl.value = "1";
+    deltaSignEl.value = "add";
+
+    renderAll();
+    try{
+      submitBtn.disabled = true;
+      await appendEventToSheet(e);
+      toast("已上传", `${type} · ${delta >= 0 ? "+" : ""}${delta}`);
+    }catch(err){
+      console.error(err);
+      toast("上传失败", String(err));
+      // 最稳：失败后直接重新从表同步一次，避免本地与表不一致
+      await initFromSheet();
+    }finally{
+      submitBtn.disabled = false;
+  }
+  }
+
+  async function openEditPrompt(eventId){
+    const e = events.find(x => x.event_id === eventId);
+    if(!e) return;
+
+    // 更正：允许改 delta/type/备注/operator
+    // 这里用 prompt 做 MVP，之后你要更漂亮的弹窗我再帮你做
+    const newDeltaStr = prompt("更正 delta（例如 3 或 -2）", String(e.delta));
+    if(newDeltaStr === null) return;
+
+    const newDelta = parseInt(newDeltaStr, 10);
+    if(Number.isNaN(newDelta) || newDelta === 0){
+      toast("更正失败", "delta 必须是非 0 整数。");
+      return;
+    }
+
+    const newType = prompt("更正 原因分类（type）", e.type) ?? e.type;
+    const newDesc = prompt("更正 备注（可空）", e.description || "") ?? (e.description || "");
+    const newOp = prompt("更正 操作员（operator）", e.operator || "Teacher") ?? (e.operator || "Teacher");
+
+    // 关键：为了保证“更正后积分正确”，我们最稳妥做法是重算
+    e.delta = newDelta;
+    e.type = (newType || "").trim() || "其它";
+    e.description = (newDesc || "").trim();
+    e.operator = (newOp || "").trim() || "Teacher";
+
+    rebuildPointsFromEvents();
+    renderAll();
+    try{
+      await updateEventInSheet(e.event_id, {
+        delta: e.delta,
+        type: e.type,
+        description: e.description,
+        operator: e.operator
+      });
+      toast("已更正并上传", "流水已更新（不可删除）。");
+    }catch(err){
+      console.error(err);
+      toast("更正上传失败", String(err));
+      await initFromSheet();
+  }
+  }
+
+  /***********************
+   * Bind
+   ***********************/
+  searchBoxEl.addEventListener("input", renderStudentList);
+  clearSearchBtn.onclick = () => { searchBoxEl.value=""; renderStudentList(); };
+
+  //这里是那几个快捷按钮
+  submitBtn.onclick = () => submitEvent();
+  quickPlus5Btn.onclick = () => submitEvent(+5);
+  quickMinus2Btn.onclick = () => submitEvent(-2);
+
+  resetDemoBtn.onclick = resetToSnapshot;
+
+  /***********************
+   * Init: normalize points from events + render
+   ***********************/
+  // 为了保证示例里 students.points 与 events 一致：先重算一次
+  //rebuildPointsFromEvents();
+  //snapshot = initialSnapshot();
+  //renderAll();
+  initFromSheet();
+</script>
+
+</body>
+</html>
