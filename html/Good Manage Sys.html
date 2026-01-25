@@ -555,37 +555,44 @@
   <div class="toastWrap" id="toastWrap"></div>
 
   <script>
-    // ---------- Local Demo Data ----------
+    // ---------- Upload/Download Data From SpreadSheet ----------
     /** @type {{item_id:string,name:string,price:number,qty:number,img_url:string,note:string,updated_at:string}[]} */
-    let items = [
-      {
-        item_id: "I_20260123_a1f2",
-        name: "Pencil",
-        price: 20,
-        qty: 12,
-        img_url: "",
-        note: "HB · for writing",
-        updated_at: new Date().toISOString()
-      },
-      {
-        item_id: "I_20260123_b8c1",
-        name: "Notebook",
-        price: 60,
-        qty: 6,
-        img_url: "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=1200&q=60",
-        note: "A5 · lined",
-        updated_at: new Date().toISOString()
-      },
-      {
-        item_id: "I_20260123_c9d0",
-        name: "Eraser",
-        price: 15,
-        qty: 20,
-        img_url: "https://images.unsplash.com/photo-1588072432836-7fb78b1db6da?auto=format&fit=crop&w=1200&q=60",
-        note: "",
-        updated_at: new Date().toISOString()
-      }
-    ];
+    let items = [];
+    const API_URL = "https://script.google.com/macros/s/AKfycbyFB_DF0COgRnRxW47Dhbpj_dOWvhAQrjng1orc7SJw7ZbYSAmmfiUOfuFEODSqSBAtVA/exec";
+
+    async function loadItems(){
+        const r = await fetch(`${API_URL}?action=items&t=${Date.now()}`);
+        const data = await r.json();
+        if(!data.ok) throw new Error(data.msg || "loadItems failed");
+        return data.items || [];
+    }
+
+    async function postAction(payload){
+        const r = await fetch(API_URL, {
+            method: "POST",
+            headers: {"Content-Type":"text/plain;charset=utf-8"},
+            body: JSON.stringify(payload)
+        });
+        const data = await r.json();
+        if(!data.ok) throw new Error(data.msg || `${payload.action} failed`);
+        return data;
+    }
+
+    async function resync(){
+    const raw = await loadItems();
+    items = raw.map(it => ({
+        item_id: String(it.item_id),
+        name: String(it.name ?? ""),
+        price: Number(it.price ?? 0),
+        qty: Number(it.qty ?? 0),
+        img_url: String(it.img_url ?? ""),
+        note: String(it.note ?? ""),
+        // 兼容表里 update_at 与你代码里的 updated_at
+        updated_at: String(it.update_at ?? it.updated_at ?? "")
+    }));
+    render();
+    }
+
 
     // ---------- State ----------
     let searchQ = "";
@@ -760,32 +767,34 @@
     }
 
     // ---------- Operations ----------
-    function incQty(id){
-      const it = items.find(x => x.item_id === id);
-      if(!it) return;
-      it.qty = Number(it.qty || 0) + 1;
-      it.updated_at = new Date().toISOString();
-      toast("good", "已更新", `${it.name}: 数量 +1`);
-      render();
+    async function incQty(id){
+        const it = items.find(x => x.item_id === id);
+        if(!it) return;
+        const new_Qty = Number(it.qty || 0) + 1;
+        it.qty = new_Qty;
+        render();
+
+        await postAction({action:"updateItem",item_id:id,patch:{qty:new_Qty}});
+        toast("good", "已更新", `${it.name}: 数量 +1`);
+        await resync();
     }
 
-    function decQty(id){
-      const it = items.find(x => x.item_id === id);
-      if(!it) return;
-      it.qty = Number(it.qty || 0) - 1;
+    async function decQty(id){
+        const it = items.find(x => x.item_id === id);
+        if(!it) return;
+        const newQty = Number(it.qty || 0) - 1;
+        it.qty = newQty;
+        render();
 
-      if(it.qty <= 0){
-        // rule: qty=0 auto delete
-        items = items.filter(x => x.item_id !== id);
-        toast("warn", "自动删除", `${it.name}: 数量达到了 0`);
-      }else{
-        it.updated_at = new Date().toISOString();
-        toast("good", "已更新", `${it.name}: 数量 -1`);
-      }
-      render();
+        // 你要的规则：qty<=0 自动删除 → 直接 updateItem 让后端删（或调用 deleteItem 都行）
+        await postAction({ action:"updateItem", item_id:id, patch:{ qty:newQty }});
+        toast(newQty <= 0 ? "warn" : "good", newQty <= 0 ? "自动删除" : "已更新",
+                newQty <= 0 ? `${it.name}: 数量达到了 0` : `${it.name}: 数量 -1`);
+        
+        await resync();
     }
 
-    function upsertFromModal(){
+    async function upsertFromModal(){
       const name = fName.value.trim();
       const price = Number(fPrice.value);
       const qty = Number(fQty.value);
@@ -812,9 +821,13 @@
         // qty=0 => delete
         if(qty <= 0){
           items = items.filter(x => x.item_id !== editingId);
-          toast("warn", "已删除", `${it.name} 数量为 0 自动删除`);
           closeModal();
           render();
+
+
+          await postAction({action:"deleteItem",item_id:it.item_id});
+          toast("warn", "已删除", `${it.name} 数量为 0 自动删除`);
+          await resync();
           return;
         }
 
@@ -824,8 +837,13 @@
         it.img_url = img_url;
         it.note = note;
         it.updated_at = new Date().toISOString();
+        closeModal();
+        render();
 
+        await postAction({action:"updateItem",item_id:it.item_id,patch:{name:it.name,price:it.price,qty:it.qty,img_url:it.img_url,note:it.note}});
         toast("good", "已保存", `${it.name} 已更新.`);
+        await resync();
+        return;
       }else{
         if(qty <= 0){
           toast("bad", "无效的", "新物品的数量必须是一个非负整数");
@@ -841,6 +859,7 @@
           updated_at: new Date().toISOString()
         };
         items.unshift(it);
+        await postAction({action:"addItem",item:it});
         toast("good", "已添加", `${it.name} 已添加.`);
       }
 
@@ -886,13 +905,15 @@
       modalBack.setAttribute("aria-hidden", "true");
     }
 
-    function deleteCurrent(){
+    async function deleteCurrent(){
       if(!editingId) return;
       const it = items.find(x => x.item_id === editingId);
       items = items.filter(x => x.item_id !== editingId);
+      render();
+
+      await postAction({action:"deleteItem",item_id:it.item_id});
       toast("warn", "已删除", `${it?.name || "Item"} 已被删除.`);
       closeModal();
-      render();
     }
 
     // ---------- Events ----------
@@ -927,7 +948,10 @@
     });
 
     // init
-    render();
+    resync().catch(err => {
+        toast("bad","同步失败",string(err));
+        render();
+    })
   </script>
 </body>
 </html>
