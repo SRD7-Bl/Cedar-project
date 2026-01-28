@@ -1,0 +1,1652 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <!-- BUILD: 2026-01-26 15:27:08 -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>物资管理系统</title>
+  <style>
+    :root{
+      --bg:#0b1020;
+      --panel:#101833;
+      --panel2:#0f1630;
+      --card:#111b3a;
+      --card2:#0e1633;
+      --text:#e9eeff;
+      --muted:#a8b4dd;
+      --line:rgba(255,255,255,.10);
+      --shadow: 0 12px 30px rgba(0,0,0,.40);
+      --radius:16px;
+
+      --accent:#7aa2ff;
+      --good:#5de4c7;
+      --warn:#ffd37a;
+      --bad:#ff6b81;
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background:
+        radial-gradient(1200px 800px at 20% -10%, rgba(122,162,255,.18), transparent 55%),
+        radial-gradient(900px 700px at 90% 0%, rgba(93,228,199,.10), transparent 55%),
+        radial-gradient(1000px 900px at 10% 110%, rgba(255,107,129,.08), transparent 55%),
+        var(--bg);
+      color:var(--text);
+    }
+
+    .app{
+      max-width:1200px;
+      margin: 26px auto 80px;
+      padding: 0 18px;
+    }
+
+    /* Top Bar */
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding: 16px 16px;
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 14px;
+      z-index: 5;
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      min-width: 260px;
+    }
+    .logo{
+      width:42px;height:42px;border-radius:14px;
+      background: radial-gradient(circle at 30% 30%, rgba(122,162,255,.9), rgba(93,228,199,.55) 45%, rgba(255,255,255,.15) 70%);
+      border: 1px solid rgba(255,255,255,.18);
+      box-shadow: 0 10px 20px rgba(0,0,0,.35);
+      flex: 0 0 auto;
+    }
+    .titlewrap{ line-height:1.05; }
+    .title{
+      font-size: 15px;
+      font-weight: 760;
+      letter-spacing: .2px;
+    }
+    .subtitle{
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .controls{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:10px;
+      flex: 1;
+      flex-wrap: wrap;
+    }
+
+    .input{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(15,22,48,.55);
+      min-width: 240px;
+    }
+    .input input{
+      width: 100%;
+      border: 0;
+      outline: none;
+      background: transparent;
+      color: var(--text);
+      font-size: 14px;
+    }
+    .input .hint{
+      font-size: 12px;
+      color: var(--muted);
+      opacity:.9;
+      white-space: nowrap;
+    }
+
+    select{
+      border: 1px solid var(--line);
+      background: rgba(15,22,48,.55);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 10px 10px;
+      font-size: 13px;
+      outline: none;
+    }
+
+    .btn{
+      border: 1px solid var(--line);
+      background: rgba(15,22,48,.55);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 10px 12px;
+      font-size: 13px;
+      cursor:pointer;
+      transition: transform .05s ease, background .15s ease, border-color .15s ease;
+      user-select:none;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+    }
+    .btn:hover{ border-color: rgba(255,255,255,.22); background: rgba(15,22,48,.72); }
+    .btn:active{ transform: translateY(1px); }
+    .btn.primary{
+      background: linear-gradient(180deg, rgba(122,162,255,.28), rgba(122,162,255,.12));
+      border-color: rgba(122,162,255,.35);
+    }
+    .btn.danger{
+      background: linear-gradient(180deg, rgba(255,107,129,.22), rgba(255,107,129,.10));
+      border-color: rgba(255,107,129,.35);
+    }
+    .pill{
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+      background: rgba(15,22,48,.35);
+    }
+
+    /* Content */
+    .section{
+      margin-top: 16px;
+      display:flex;
+      gap:14px;
+      align-items:stretch;
+      flex-wrap: wrap;
+    }
+    .panel{
+      flex: 1 1 320px;
+      min-width: 280px;
+      padding: 14px 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(16,24,51,.55);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+    .panel h3{
+      margin: 0 0 6px;
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 650;
+      letter-spacing: .2px;
+    }
+    .stats{
+      display:flex;
+      gap:10px;
+      flex-wrap: wrap;
+      align-items:center;
+    }
+    .stat{
+      background: rgba(15,22,48,.35);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 10px 12px;
+      min-width: 170px;
+    }
+    .stat .k{ font-size: 12px; color: var(--muted); }
+    .stat .v{ margin-top: 6px; font-weight: 750; font-size: 18px; letter-spacing:.2px; }
+
+    /* Grid */
+    .grid{
+      margin-top: 14px;
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 14px;
+    }
+
+    .card{
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      overflow:hidden;
+      box-shadow: var(--shadow);
+      position: relative;
+    }
+    .imgwrap{
+      width:100%;
+      aspect-ratio: 4 / 3;
+      background: rgba(15,22,48,.5);
+      border-bottom: 1px solid var(--line);
+      position: relative;
+      overflow:hidden;
+    }
+    .imgwrap img{
+      width:100%;
+      height:100%;
+      object-fit: cover;
+      display:block;
+      filter: saturate(1.05) contrast(1.02);
+      transform: scale(1.02);
+    }
+    .imgwrap .ph{
+      position:absolute; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      color: rgba(233,238,255,.35);
+      font-size: 12px;
+      letter-spacing:.2px;
+      background:
+        radial-gradient(900px 600px at 30% 30%, rgba(122,162,255,.22), transparent 45%),
+        radial-gradient(700px 500px at 80% 20%, rgba(93,228,199,.14), transparent 50%),
+        rgba(15,22,48,.45);
+    }
+
+    .cardbody{ padding: 12px 12px 10px; }
+    .nameRow{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom: 8px;
+    }
+    .name{
+      font-weight: 760;
+      font-size: 14px;
+      letter-spacing:.2px;
+      line-height:1.2;
+    }
+    .id{
+      font-size: 11px;
+      color: var(--muted);
+      opacity:.85;
+      user-select:text;
+      white-space: nowrap;
+    }
+    .meta{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .chip{
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(15,22,48,.35);
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .chip strong{
+      color: var(--text);
+      font-weight: 760;
+      margin-left: 4px;
+    }
+    .note{
+      color: var(--muted);
+      font-size: 12px;
+      line-height:1.35;
+      min-height: 32px;
+      opacity:.92;
+    }
+
+    .actions{
+      display:flex;
+      gap:8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .qtyCtl{
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .mini{
+      padding: 8px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+    }
+    .mini.primary{ border-color: rgba(122,162,255,.35); }
+    .mini.danger{ border-color: rgba(255,107,129,.35); }
+
+    .qty{
+      min-width: 54px;
+      text-align:center;
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(15,22,48,.35);
+      font-weight: 760;
+    }
+
+    .footerbar{
+      margin-top: 18px;
+      padding: 12px 14px;
+      border-radius: var(--radius);
+      border: 1px dashed rgba(255,255,255,.18);
+      color: var(--muted);
+      font-size: 12px;
+      background: rgba(16,24,51,.25);
+    }
+
+    /* Modal */
+    .modalBack{
+      position:fixed; inset:0;
+      background: rgba(0,0,0,.58);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding: 20px;
+      z-index: 20;
+    }
+    .modal{
+      width: min(680px, 100%);
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: linear-gradient(180deg, rgba(16,24,51,.92), rgba(12,17,36,.92));
+      box-shadow: 0 22px 60px rgba(0,0,0,.55);
+      overflow:hidden;
+    }
+    .modalHeader{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding: 14px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+    .modalHeader .h{
+      font-weight: 780;
+      letter-spacing:.2px;
+    }
+    .modalBody{
+      padding: 14px 14px 4px;
+    }
+    .formGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .field label{
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .field input, .field textarea{
+      border: 1px solid var(--line);
+      background: rgba(15,22,48,.55);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 10px 10px;
+      outline:none;
+      font-size: 13px;
+    }
+    .field textarea{
+      min-height: 82px;
+      resize: vertical;
+      grid-column: 1 / -1;
+    }
+    .modalFooter{
+      display:flex;
+      gap:10px;
+      justify-content:flex-end;
+      padding: 12px 14px;
+      border-top: 1px solid var(--line);
+      background: rgba(15,22,48,.25);
+    }
+
+    /* Toast */
+    .toastWrap{
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      z-index: 50;
+    }
+    .toast{
+      width: min(360px, calc(100vw - 32px));
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(16,24,51,.90);
+      box-shadow: 0 18px 44px rgba(0,0,0,.55);
+      padding: 12px 12px;
+      color: var(--text);
+      backdrop-filter: blur(10px);
+      animation: pop .18s ease-out;
+    }
+    @keyframes pop{ from{ transform: translateY(8px); opacity:.0 } to{ transform: translateY(0); opacity:1 } }
+    .toast .t{ font-weight: 780; font-size: 13px; }
+    .toast .m{ margin-top: 6px; color: var(--muted); font-size: 12px; line-height:1.35; }
+    .toast.good{ border-color: rgba(93,228,199,.35); }
+    .toast.warn{ border-color: rgba(255,211,122,.35); }
+    .toast.bad{ border-color: rgba(255,107,129,.35); }
+
+
+    /* Tabs + Shop */
+    .tabbar{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding-right: 6px;
+      border-right: 1px solid rgba(255,255,255,.10);
+      margin-right: 8px;
+    }
+    .small{ font-size: 12px; }
+    .muted{ color: var(--muted); }
+
+    .shopForm{
+      display:flex;
+      gap:12px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+      align-items: flex-start;
+    }
+    .cartList{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      margin-top: 6px;
+    }
+    .cartRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      border: 1px solid var(--line);
+      background: rgba(15,22,48,.35);
+      border-radius: 14px;
+      padding: 10px 10px;
+    }
+    .cartLeft{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      min-width: 0;
+      flex: 1;
+    }
+    .cartName{
+      font-weight: 760;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+    }
+    .cartMeta{ font-size: 12px; color: var(--muted); }
+    .cartCtl{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap: nowrap;
+    }
+    .cartSummary{
+      margin-top: 12px;
+      border-top: 1px dashed rgba(255,255,255,.16);
+      padding-top: 12px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .cartSummary .row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .cartSummary strong{ color: var(--text); font-size: 14px; }
+
+    @media (max-width: 720px){
+      .brand{ min-width: unset; }
+      .formGrid{ grid-template-columns: 1fr; }
+      .input{ min-width: 180px; }
+    }
+    .overlay.hidden { display: none; }
+
+    .overlay{
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .overlay-card{
+      background: rgb(1, 2, 69);
+      border-radius: 14px;
+      padding: 16px 18px;
+      width: min(360px, calc(100vw - 48px));
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+      text-align: center;
+    }
+
+    .overlay-title{ font-weight: 700; margin-top: 10px; }
+    .overlay-sub{ font-size: 12px; opacity: .75; margin-top: 6px; }
+
+    .spinner{
+      width: 34px; height: 34px;
+      border: 4px solid rgba(255, 255, 255, 0.15);
+      border-top-color: rgba(103, 171, 255, 0.65);
+      border-radius: 50%;
+      margin: 0 auto;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+  </style>
+</head>
+
+<body>
+  <div class="app">
+
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div class="titlewrap">
+          <div class="title">物资管理系统</div>
+          <div class="subtitle" id="subtitleEl">UI Prototype · 图片卡片式物品管理</div>
+        </div>
+      </div>
+
+      <div class="controls">
+
+        <div class="tabbar" role="tablist" aria-label="模式切换">
+          <button class="btn mini primary" id="tabInvBtn" role="tab" aria-selected="true">库存</button>
+          <button class="btn mini" id="tabShopBtn" role="tab" aria-selected="false">购买</button>
+        </div>
+        <div class="input" title="按名称/ID/备注搜索">
+          <span class="hint">🔎</span>
+          <input id="searchInput" placeholder="Search items..." />
+        </div>
+
+        <select id="sortSelect" title="排序">
+          <option value="name_asc">名字 ↑</option>
+          <option value="name_desc">名字 ↓</option>
+          <option value="price_asc">价格 ↑</option>
+          <option value="price_desc">价格 ↓</option>
+          <option value="qty_asc">数量 ↑</option>
+          <option value="qty_desc">数量 ↓</option>
+        </select>
+
+        <button class="btn primary" id="addBtn">＋ 添加新物品</button>
+        <span class="pill" id="countPill">0 数量</span>
+      </div>
+    </div>
+
+
+    <div id="invView">
+      <div class="section">
+        <div class="panel">
+          <h3>快速统计:</h3>
+          <div class="stats">
+            <div class="stat">
+              <div class="k">总物品种类数量</div>
+              <div class="v" id="statTotal">0</div>
+            </div>
+            <div class="stat">
+              <div class="k">总物品数量</div>
+              <div class="v" id="statQty">0</div>
+            </div>
+            <div class="stat">
+              <div class="k">总共价值</div>
+              <div class="v" id="statValue">0</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>规则</h3>
+          <div style="color:var(--muted); font-size:12px; line-height:1.5;">
+            • 物品支持图片展示（img url）<br/>
+            • 可添加/编辑物品：名字 / 价格 / 数量 / 图片 / 备注<br/>
+            • 通过 + / - 快速调整库存<br/>
+            • <b style="color:var(--text)">数量为0 → 自动删除该物品</b><br/>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid" id="grid"></div>
+      <!-- /#invView -->
+    </div>
+
+    <div id="shopView" style="display:none;">
+      <div class="section">
+        <div class="panel">
+          <h3>购买 / 兑换（会自动扣积分 + 出库）</h3>
+
+          <div class="shopForm">
+            <div class="field" style="flex:1; min-width:220px;">
+              <label>选择学生</label>
+              <select id="shopStudentSelect"></select>
+              <div class="small muted" id="shopStudentInfo" style="margin-top:6px;">未选择</div>
+            </div>
+
+            <div class="field" style="flex:1; min-width:220px;">
+              <label>操作员（operator）</label>
+              <input id="shopOperatorInput" type="text" value="Teacher" />
+              <div class="small muted" style="margin-top:6px;">建议写老师姓名或角色（例如：Teacher A）</div>
+            </div>
+
+            <div class="field" style="flex:1; min-width:220px;">
+              <label>备注（可选）</label>
+              <input id="shopNoteInput" type="text" placeholder="例如：课间兑换 / 代领等" />
+              <div class="small muted" style="margin-top:6px;">会写入积分系统流水 description</div>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
+            <button class="btn" id="shopResyncBtn">🔄 同步（库存+积分）</button>
+            <button class="btn" id="shopClearCartBtn">🧹 清空购物车</button>
+            <button class="btn primary" id="shopCheckoutBtn">✅ 结账（扣分并出库）</button>
+          </div>
+
+          <div class="small muted" style="margin-top:10px; line-height:1.55;">
+            • 加入购物车时会限制数量 ≤ 当前库存 qty<br/>
+            • 结账前会自动再同步一次，避免页面数据过期<br/>
+            • 生成 order_id 写入积分流水备注，防止误操作/便于追溯
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>购物车</h3>
+          <div id="cartList" class="cartList"></div>
+          <div class="cartSummary">
+            <div class="row"><span>商品种类</span><strong id="cartKinds">0</strong></div>
+            <div class="row"><span>总件数</span><strong id="cartQty">0</strong></div>
+            <div class="row"><span>总价格（积分）</span><strong id="cartTotal">0</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid" id="shopGrid"></div>
+
+      <div class="footerbar">
+        Tip：这是 “购买窗口” 的 MVP：单人操作、课间兑换。后续如果要更稳，可以把 “扣分 + 出库” 合并成后端一个 redeem action 做原子化。
+      </div>
+    </div> <!-- /#shopView -->
+
+  </div>
+
+  <!-- 新物品添加表单 --> 
+  <div class="modalBack" id="modalBack" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal">
+      <div class="modalHeader">
+        <div class="h" id="modalTitle">添加物品</div>
+        <button class="btn mini" id="closeModalBtn">✕</button>
+      </div>
+
+      <div class="modalBody">
+        <div class="formGrid">
+          <div class="field">
+            <label>名字</label>
+            <input id="fName" placeholder="e.g. 铅笔" />
+          </div>
+          <div class="field">
+            <label>价格 (积分)</label>
+            <input id="fPrice" type="number" min="0" step="1" placeholder="e.g. 20" />
+          </div>
+          <div class="field">
+            <label>数量</label>
+            <input id="fQty" type="number" min="0" step="1" placeholder="e.g. 15" />
+          </div>
+          <div class="field">
+            <label>图片地址</label>
+            <input id="fImg" placeholder="https://..." />
+          </div>
+          <div class="field" style="grid-column:1/-1;">
+            <label>备注</label>
+            <textarea id="fNote" placeholder="一些备注..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="modalFooter">
+        <button class="btn danger" id="deleteBtn" style="display:none;">删除</button>
+        <button class="btn" id="cancelBtn">取消</button>
+        <button class="btn primary" id="saveBtn">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toastWrap" id="toastWrap"></div>
+
+  <!-- Loading Overlay -->
+   <div id="loadingOverlay" class="overlay hidden">
+    <div class="overlay-card">
+      <div class="spinner"></div>
+      <div class="overlay-title">正在结账...</div>
+      <div class="overlay-sub">请等待。不要关闭页面。</div>
+    </div>
+   </div>
+
+  <script>
+    // ---------- Upload/Download Data From SpreadSheet ----------
+    /** @type {{item_id:string,name:string,price:number,qty:number,img_url:string,note:string,updated_at:string}[]} */
+    let items = [];
+    const API_URL = "https://script.google.com/macros/s/AKfycbyFB_DF0COgRnRxW47Dhbpj_dOWvhAQrjng1orc7SJw7ZbYSAmmfiUOfuFEODSqSBAtVA/exec";
+
+    async function loadItems(){
+        const r = await fetch(`${API_URL}?action=items&t=${Date.now()}`);
+        const data = await r.json();
+        if(!data.ok) throw new Error(data.msg || "loadItems failed");
+        return data.items || [];
+    }
+
+    async function postAction(payload){
+        const r = await fetch(API_URL, {
+            method: "POST",
+            headers: {"Content-Type":"text/plain;charset=utf-8"},
+            body: JSON.stringify(payload)
+        });
+        const data = await r.json();
+        if(!data.ok) throw new Error(data.msg || `${payload.action} failed`);
+        return data;
+    }
+
+    async function resync(){
+    const raw = await loadItems();
+    items = raw.map(it => ({
+        item_id: String(it.item_id),
+        name: String(it.name ?? ""),
+        price: Number(it.price ?? 0),
+        qty: Number(it.qty ?? 0),
+        img_url: String(it.img_url ?? ""),
+        note: String(it.note ?? ""),
+        // 兼容表里 update_at 与你代码里的 updated_at
+        updated_at: String(it.update_at ?? it.updated_at ?? "")
+    }));
+    renderCurrent();
+    }
+
+
+    // ---------- State ----------
+    let searchQ = "";
+    let sortKey = "name_asc";
+    let editingId = null;
+
+    // ---------- DOM ----------
+    const grid = document.getElementById("grid");
+    const searchInput = document.getElementById("searchInput");
+    const sortSelect = document.getElementById("sortSelect");
+    const countPill = document.getElementById("countPill");
+
+    const statTotal = document.getElementById("statTotal");
+    const statQty = document.getElementById("statQty");
+    const statValue = document.getElementById("statValue");
+
+    const modalBack = document.getElementById("modalBack");
+    const modalTitle = document.getElementById("modalTitle");
+    const closeModalBtn = document.getElementById("closeModalBtn");
+    const addBtn = document.getElementById("addBtn");
+    const cancelBtn = document.getElementById("cancelBtn");
+    const saveBtn = document.getElementById("saveBtn");
+    const deleteBtn = document.getElementById("deleteBtn");
+
+    const fName = document.getElementById("fName");
+    const fPrice = document.getElementById("fPrice");
+    const fQty = document.getElementById("fQty");
+    const fImg = document.getElementById("fImg");
+    const fNote = document.getElementById("fNote");
+
+    const toastWrap = document.getElementById("toastWrap");
+
+    // ---------- Dual System Link (Shop -> Point DB) ----------
+    // Points system Apps Script URL (copy from Point Manage Sys)
+    const POINT_API_URL = "https://script.google.com/macros/s/AKfycbwhk23YntQ2bvr8fRjFuL1YZ-3LBAH_8HOq6NsDFdp1NUL02zAo6u2NkeQeG-Lf5HXj/exec";
+
+    let activeTab = "inventory"; // "inventory" | "shop"
+
+    /** cart: item_id -> qty */
+    let cart = {};
+
+    // points cache
+    /** @type {{id:string,name:string,grade:string,class:string,points:number}[]} */
+    let pointStudents = [];
+    /** @type {{event_id:string,time:string,student_id:string,delta:number,type:string,description:string,operator:string}[]} */
+    let pointEvents = [];
+    const pointsById = new Map();
+
+    // Tab DOM
+    const invView = document.getElementById("invView");
+    const shopView = document.getElementById("shopView");
+    const subtitleEl = document.getElementById("subtitleEl");
+    const tabInvBtn = document.getElementById("tabInvBtn");
+    const tabShopBtn = document.getElementById("tabShopBtn");
+
+    // Shop DOM
+    const shopStudentSelect = document.getElementById("shopStudentSelect");
+    const shopStudentInfo = document.getElementById("shopStudentInfo");
+    const shopOperatorInput = document.getElementById("shopOperatorInput");
+    const shopNoteInput = document.getElementById("shopNoteInput");
+    const shopResyncBtn = document.getElementById("shopResyncBtn");
+    const shopClearCartBtn = document.getElementById("shopClearCartBtn");
+    const shopCheckoutBtn = document.getElementById("shopCheckoutBtn");
+    const shopGrid = document.getElementById("shopGrid");
+    const cartList = document.getElementById("cartList");
+    const cartKinds = document.getElementById("cartKinds");
+    const cartQty = document.getElementById("cartQty");
+    const cartTotal = document.getElementById("cartTotal");
+
+    function renderCurrent(){
+      if(activeTab === "inventory") render();
+      else renderShop();
+    }
+
+    function setTab(tab){
+      activeTab = tab;
+      const isInv = tab === "inventory";
+      invView.style.display = isInv ? "" : "none";
+      shopView.style.display = isInv ? "none" : "";
+
+      // Buttons
+      tabInvBtn.classList.toggle("primary", isInv);
+      tabShopBtn.classList.toggle("primary", !isInv);
+      tabInvBtn.setAttribute("aria-selected", isInv ? "true" : "false");
+      tabShopBtn.setAttribute("aria-selected", !isInv ? "true" : "false");
+
+      // In shop mode, hide inventory-only controls
+      addBtn.style.display = isInv ? "inline-flex" : "none";
+
+      // Subtitle
+      if(subtitleEl){
+        subtitleEl.textContent = isInv
+          ? "库存管理 · 图片卡片式物品管理"
+          : "购买/兑换 · 购物车 + 结账扣分";
+      }
+
+      // Refresh view
+      if(!isInv){
+        // ensure points are loaded at least once
+        if(pointStudents.length === 0) {
+          resyncPoint().catch(err => {
+            console.error(err);
+            toast("bad", "积分系统同步失败", String(err));
+          });
+        }
+        renderShop();
+      }else{
+        render();
+      }
+    }
+
+    tabInvBtn.addEventListener("click", ()=> setTab("inventory"));
+    tabShopBtn.addEventListener("click", ()=> setTab("shop"));
+
+    // ---------- Point DB helpers ----------
+    async function loadPointStudents(){
+      const r = await fetch(`${POINT_API_URL}?action=students&t=${Date.now()}`);
+      const data = await r.json();
+      if(data && data.ok === false) throw new Error(data.msg || "loadPointStudents failed");
+      // allow either array or wrapped
+      return Array.isArray(data) ? data : (data.students || data.data || []);
+    }
+
+    async function loadPointEvents(){
+      const r = await fetch(`${POINT_API_URL}?action=events&t=${Date.now()}`);
+      const data = await r.json();
+      if(data && data.ok === false) throw new Error(data.msg || "loadPointEvents failed");
+      return Array.isArray(data) ? data : (data.events || data.data || []);
+    }
+
+    async function appendPointEvent(e){
+      const r = await fetch(POINT_API_URL, {
+        method: "POST",
+        headers: {"Content-Type":"text/plain;charset=utf-8"},
+        body: JSON.stringify({action:"appendEvent", event:e})
+      });
+      const data = await r.json();
+      if(!data.ok) throw new Error(data.msg || "appendEvent failed");
+      return data;
+    }
+
+    function rebuildPoints(){
+      pointsById.clear();
+      for(const s of pointStudents){
+        pointsById.set(String(s.id), 0);
+      }
+      for(const e of pointEvents){
+        const sid = String(e.student_id);
+        if(!pointsById.has(sid)) pointsById.set(sid, 0);
+        pointsById.set(sid, (pointsById.get(sid) || 0) + Number(e.delta || 0));
+      }
+      // write back
+      pointStudents = pointStudents.map(s => ({...s, points: pointsById.get(String(s.id)) || 0}));
+    }
+
+    function fillStudentSelect(){
+      if(!shopStudentSelect) return;
+      const cur = shopStudentSelect.value;
+      shopStudentSelect.innerHTML = "";
+      const opt0 = document.createElement("option");
+      opt0.value = "";
+      opt0.textContent = "— 请选择学生 —";
+      shopStudentSelect.appendChild(opt0);
+
+      const sorted = pointStudents.slice().sort((a,b)=> {
+        const ga = String(a.grade||"");
+        const gb = String(b.grade||"");
+        if(ga !== gb) return ga.localeCompare(gb, "zh-Hans-CN", {numeric:true});
+        return String(a.name||"").localeCompare(String(b.name||""), "zh-Hans-CN");
+      });
+      for(const s of sorted){
+        const o = document.createElement("option");
+        o.value = String(s.id);
+        o.textContent = `${s.grade} · ${s.name} · ${s.class} · ${s.points}分`;
+        shopStudentSelect.appendChild(o);
+      }
+      if(cur) shopStudentSelect.value = cur;
+    }
+
+    function updateSelectedStudentInfo(){
+      const sid = shopStudentSelect.value;
+      if(!sid){
+        shopStudentInfo.textContent = "未选择";
+        return;
+      }
+      const s = pointStudents.find(x => String(x.id) === String(sid));
+      if(!s){
+        shopStudentInfo.textContent = `ID ${sid}（未在本地缓存中找到）`;
+        return;
+      }
+      shopStudentInfo.textContent = `${s.grade} · ${s.class} · 当前积分：${s.points}`;
+    }
+
+    async function resyncPoint(){
+      const [sRaw, eRaw] = await Promise.all([loadPointStudents(), loadPointEvents()]);
+      pointStudents = (sRaw || []).map(s => ({
+        id: String(s.id ?? s.student_id ?? ""),
+        name: String(s.name ?? ""),
+        grade: String(s.grade ?? ""),
+        class: String(s.class ?? ""),
+        points: Number(s.points ?? 0)
+      }));
+      pointEvents = (eRaw || []).map(e => ({
+        event_id: String(e.event_id ?? ""),
+        time: String(e.time ?? ""),
+        student_id: String(e.student_id ?? ""),
+        delta: Number(e.delta ?? 0),
+        type: String(e.type ?? ""),
+        description: String(e.description ?? ""),
+        operator: String(e.operator ?? "")
+      }));
+      rebuildPoints();
+      fillStudentSelect();
+      updateSelectedStudentInfo();
+    }
+
+    shopStudentSelect?.addEventListener("change", ()=> updateSelectedStudentInfo());
+
+    shopResyncBtn?.addEventListener("click", async ()=> {
+      try{
+        shopResyncBtn.disabled = true;
+        await Promise.all([resync(), resyncPoint()]);
+        toast("good", "已同步", "库存与积分系统已刷新。");
+      }catch(err){
+        console.error(err);
+        toast("bad", "同步失败", String(err));
+      }finally{
+        shopResyncBtn.disabled = false;
+      }
+    });
+
+    shopClearCartBtn?.addEventListener("click", ()=> {
+      cart = {};
+      renderShop();
+      toast("warn", "已清空", "购物车已清空。");
+    });
+
+    // ---------- Cart helpers ----------
+    function cartKindsCount(){
+      return Object.keys(cart).length;
+    }
+    function cartQtyCount(){
+      return Object.values(cart).reduce((a,b)=>a+Number(b||0),0);
+    }
+    function cartTotalCost(){
+      let total = 0;
+      for(const [id, q] of Object.entries(cart)){
+        const it = items.find(x => x.item_id === id);
+        if(!it) continue;
+        total += Number(it.price||0) * Number(q||0);
+      }
+      return total;
+    }
+
+    function addToCart(itemId){
+      const it = items.find(x => x.item_id === itemId);
+      if(!it) return;
+      if(it.qty <= 0){
+        toast("warn", "库存不足", "该商品库存为 0。");
+        return;
+      }
+      const cur = Number(cart[itemId] || 0);
+      const next = Math.min(cur + 1, Number(it.qty));
+      cart[itemId] = next;
+      if(next === cur) {
+        toast("warn", "已达上限", "购物车数量不能超过当前库存。");
+      }
+      renderShop();
+    }
+
+    function setCartQty(itemId, qty){
+      const it = items.find(x => x.item_id === itemId);
+      if(!it) return;
+      const q = Math.max(0, Math.floor(Number(qty||0)));
+      if(q === 0){
+        delete cart[itemId];
+      }else{
+        cart[itemId] = Math.min(q, Number(it.qty));
+      }
+      renderShop();
+    }
+
+    function clampCartToStock(){
+      let changed = false;
+      for(const [id, q] of Object.entries(cart)){
+        const it = items.find(x => x.item_id === id);
+        if(!it || it.qty <= 0){
+          delete cart[id];
+          changed = true;
+          continue;
+        }
+        const cap = Number(it.qty);
+        if(Number(q) > cap){
+          cart[id] = cap;
+          changed = true;
+        }
+      }
+      return changed;
+    }
+
+    function renderCart(){
+      if(!cartList) return;
+
+      const entries = Object.entries(cart);
+      cartList.innerHTML = "";
+      if(entries.length === 0){
+        const empty = document.createElement("div");
+        empty.className = "muted small";
+        empty.style.padding = "6px 2px";
+        empty.textContent = "购物车为空。右侧商品卡片点“加入购物车”。";
+        cartList.appendChild(empty);
+      }else{
+        for(const [id, q] of entries){
+          const it = items.find(x => x.item_id === id);
+          if(!it) continue;
+          const row = document.createElement("div");
+          row.className = "cartRow";
+          row.innerHTML = `
+            <div class="cartLeft">
+              <div class="cartName">${escapeHtml(it.name)}</div>
+              <div class="cartMeta">单价 ${it.price} · 库存 ${it.qty} · 小计 ${it.price * q}</div>
+            </div>
+            <div class="cartCtl">
+              <button class="btn mini" data-act="minus" data-id="${id}">－</button>
+              <div class="qty">${q}</div>
+              <button class="btn mini" data-act="plus" data-id="${id}">＋</button>
+              <button class="btn mini danger" data-act="del" data-id="${id}">✕</button>
+            </div>
+          `;
+          cartList.appendChild(row);
+        }
+
+        // bind
+        [...cartList.querySelectorAll("button[data-act]")].forEach(btn => {
+          const act = btn.getAttribute("data-act");
+          const id = btn.getAttribute("data-id");
+          btn.onclick = ()=> {
+            const cur = Number(cart[id] || 0);
+            if(act === "minus") setCartQty(id, cur - 1);
+            if(act === "plus") setCartQty(id, cur + 1);
+            if(act === "del") setCartQty(id, 0);
+          };
+        });
+      }
+
+      cartKinds.textContent = String(cartKindsCount());
+      cartQty.textContent = String(cartQtyCount());
+      cartTotal.textContent = String(cartTotalCost());
+    }
+
+    function renderShop(){
+      if(!shopGrid) return;
+
+      // Keep student info refreshed
+      updateSelectedStudentInfo();
+
+      const q = (searchQ || "").trim().toLowerCase();
+      let list = items.filter(it => it.qty > 0);
+      if(q){
+        list = list.filter(it =>
+          (it.name||"").toLowerCase().includes(q) ||
+          (it.item_id||"").toLowerCase().includes(q) ||
+          (it.note||"").toLowerCase().includes(q)
+        );
+      }
+
+      // reuse existing sortKey
+      list.sort((a,b)=> {
+        const k = sortKey;
+        if(k === "name_asc") return String(a.name).localeCompare(String(b.name), "zh-Hans-CN");
+        if(k === "name_desc") return String(b.name).localeCompare(String(a.name), "zh-Hans-CN");
+        if(k === "price_asc") return a.price - b.price;
+        if(k === "price_desc") return b.price - a.price;
+        if(k === "qty_asc") return a.qty - b.qty;
+        if(k === "qty_desc") return b.qty - a.qty;
+        return 0;
+      });
+
+      shopGrid.innerHTML = "";
+      for(const it of list){
+        const inCart = Number(cart[it.item_id] || 0);
+        const left = Number(it.qty) - inCart;
+        const card = document.createElement("div");
+        card.className = "card";
+        const img = it.img_url ? `<img src="${escapeHtml(it.img_url)}" alt="img" onerror="this.style.display='none'; this.parentElement.querySelector('.ph').style.display='flex';" />` : "";
+        card.innerHTML = `
+          <div class="imgwrap">
+            ${img}
+            <div class="ph" style="display:${it.img_url ? "none" : "flex"};">No Image</div>
+          </div>
+          <div class="cardbody">
+            <div class="nameRow">
+              <div class="name">${escapeHtml(it.name)}</div>
+              <div class="id">${escapeHtml(it.item_id)}</div>
+            </div>
+            <div class="meta">
+              <div class="chip">价格<strong>${it.price}</strong></div>
+              <div class="chip">库存<strong>${it.qty}</strong></div>
+              <div class="chip">车内<strong>${inCart}</strong></div>
+            </div>
+            <div class="note">${escapeHtml(it.note || "")}</div>
+
+            <div class="actions">
+              <div class="qtyCtl">
+                <button class="btn mini" data-act="minus" data-id="${it.item_id}">－</button>
+                <div class="qty">${inCart}</div>
+                <button class="btn mini" data-act="plus" data-id="${it.item_id}">＋</button>
+              </div>
+              <button class="btn mini primary" data-act="add" data-id="${it.item_id}">加入购物车</button>
+            </div>
+
+            <div class="small muted" style="margin-top:10px;">
+              还可加入：${left}
+            </div>
+          </div>
+        `;
+        shopGrid.appendChild(card);
+      }
+
+      // bind
+      [...shopGrid.querySelectorAll("button[data-act]")].forEach(btn => {
+        const act = btn.getAttribute("data-act");
+        const id = btn.getAttribute("data-id");
+        btn.onclick = ()=> {
+          const cur = Number(cart[id] || 0);
+          if(act === "minus") setCartQty(id, cur - 1);
+          if(act === "plus") setCartQty(id, cur + 1);
+          if(act === "add") addToCart(id);
+        };
+      });
+
+      // Top pill: show cart count in shop view
+      countPill.textContent = `${cartQtyCount()} 件(车内)`;
+      renderCart();
+    }
+
+    // ---------- Checkout ----------
+    async function checkout(){
+      showLoading("Processing checkout...");
+      try{
+        if(cartKindsCount() === 0){
+        toast("warn", "购物车为空", "先把商品加入购物车。");
+        return;
+        }
+        const sid = shopStudentSelect.value;
+        if(!sid){
+          toast("warn", "未选学生", "请选择要扣分的学生。");
+          return;
+        }
+
+        try{
+          shopCheckoutBtn.disabled = true;
+
+          // Hard sync before commit
+          await Promise.all([resync(), resyncPoint()]);
+
+          const changed = clampCartToStock();
+          if(changed){
+            toast("warn", "购物车已调整", "库存变化导致购物车数量被自动修正。");
+          }
+          if(cartKindsCount() === 0){
+            toast("warn", "购物车已空", "库存变化导致购物车被清空，请重新选择。");
+            return;
+          }
+
+          const total = cartTotalCost();
+          const stu = pointStudents.find(x => String(x.id) === String(sid));
+          const curPts = stu ? Number(stu.points || 0) : (pointsById.get(String(sid)) || 0);
+          if(total <= 0){
+            toast("warn", "总价为 0", "请检查商品价格。");
+            return;
+          }
+          if(curPts < total){
+            toast("bad", "积分不足", `当前 ${curPts} 分，结账需要 ${total} 分。`);
+            return;
+          }
+
+          const orderId = `ORD-${new Date().toISOString().slice(0,10).replaceAll("-","")}-${crypto.randomUUID().slice(0,8)}`;
+          const operator = (shopOperatorInput.value || "Teacher").trim();
+          const note = (shopNoteInput.value || "").trim();
+
+          // Build description
+          const parts = Object.entries(cart).map(([id,q]) => {
+            const it = items.find(x=>x.item_id===id);
+            const n = it ? it.name : id;
+            return `${n}x${q}`;
+          });
+          const desc = `[${orderId}] 兑换：` + parts.join("，") + (note ? `；备注：${note}` : "");
+
+          // Step 1:扣分（append event）
+          const ev = {
+            event_id: crypto.randomUUID(),
+            time: new Date().toISOString(),
+            student_id: String(sid),
+            delta: -Math.abs(total),
+            type: "兑换",
+            description: desc,
+            operator
+          };
+          await appendPointEvent(ev);
+
+          // Step 2:出库（逐个更新库存）
+          for(const [id, q] of Object.entries(cart)){
+            const it = items.find(x => x.item_id === id);
+            if(!it) continue;
+            const newQty = Math.max(0, Number(it.qty) - Number(q));
+            await postAction({action:"updateItem", item_id:id, patch:{qty:newQty}});
+          }
+
+          // refresh
+          cart = {};
+          shopNoteInput.value = "";
+          await Promise.all([resync(), resyncPoint()]);
+          renderShop();
+          toast("good", "结账成功", `已扣 ${total} 分，并完成出库。`);
+          }catch(err){
+            console.error(err);
+            // Best effort: resync to keep UI consistent
+            try{ await Promise.all([resync(), resyncPoint()]); }catch(_e){}
+            toast("bad", "结账失败", String(err));
+          }finally{
+            shopCheckoutBtn.disabled = false;
+          }
+      }finally{
+        hiddenLoading();
+      }
+    }
+
+    shopCheckoutBtn?.addEventListener("click", checkout);
+
+
+    // ---------- Helpers ----------
+    const fmt = new Intl.NumberFormat("en-US");
+
+    function genId(){
+      return `I_${Date.now()}_${Math.random().toString(16).slice(2,6)}`;
+    }
+
+    function normalizeImgUrl(url){
+      // 可选：未来接 Drive 链接时在这做转换
+      return (url || "").trim();
+    }
+
+    function toast(type, title, msg){
+      const el = document.createElement("div");
+      el.className = `toast ${type || ""}`;
+      el.innerHTML = `<div class="t">${escapeHtml(title)}</div><div class="m">${escapeHtml(msg || "")}</div>`;
+      toastWrap.appendChild(el);
+      setTimeout(()=> {
+        el.style.opacity = "0";
+        el.style.transform = "translateY(6px)";
+        el.style.transition = "all .18s ease";
+        setTimeout(()=> el.remove(), 180);
+      }, 2200);
+    }
+
+    function escapeHtml(s){
+      return String(s ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    // 计算快速统计里的一些数据
+    function computeStats(list){
+      let total = list.length;
+      let qty = 0;
+      let value = 0;
+      for(const it of list){
+        qty += Number(it.qty || 0);
+        value += Number(it.qty || 0) * Number(it.price || 0);
+      }
+      statTotal.textContent = fmt.format(total);
+      statQty.textContent = fmt.format(qty);
+      statValue.textContent = fmt.format(value);
+      countPill.textContent = `${total} items`;
+    }
+
+
+    function filteredSorted(){
+      const s = searchQ.trim().toLowerCase(); //根据search keyword进行筛选
+      let list = items.filter(it => {
+        if(!s) return true;
+        return (
+          it.name.toLowerCase().includes(s) ||
+          it.item_id.toLowerCase().includes(s) ||
+          (it.note || "").toLowerCase().includes(s)
+        );
+      });
+
+      const [k, dir] = sortKey.split("_"); //根据filter选择的标签筛选
+      const mul = dir === "asc" ? 1 : -1; //正序/倒序
+      list.sort((a,b) => {
+        if(k === "name"){
+          return a.name.localeCompare(b.name) * mul;
+        }
+        if(k === "price"){
+          return (a.price - b.price) * mul;
+        }
+        if(k === "qty"){
+          return (a.qty - b.qty) * mul;
+        }
+        return 0;
+      });
+
+      return list;
+    }
+
+    function showLoading(msg){
+      const ov = document.getElementById("loadingOverlay");
+      if(!ov)return;
+      ov.classList.remove("hidden");
+      if(msg){
+        const t = ov.querySelector(".overlay-title");
+        if(t) t.textContent = msg;
+      }
+    }
+
+    function hiddenLoading(){
+      const ov = document.getElementById("loadingOverlay");
+      if(!ov)return;
+      ov.classList.add("hidden");
+    }
+
+    // ---------- Render ----------
+    function render(){
+      const list = filteredSorted();
+      computeStats(list);
+
+      grid.innerHTML = "";
+      for(const it of list){
+        const card = document.createElement("div");
+        card.className = "card";
+
+        const img = normalizeImgUrl(it.img_url);
+        const imgHtml = img
+          ? `<img src="${escapeHtml(img)}" alt="${escapeHtml(it.name)}" onerror="this.style.display='none'; this.parentElement.querySelector('.ph').style.display='flex';" />`
+          : ``;
+
+          //渲染每一个商品card
+        card.innerHTML = `
+          <div class="imgwrap">
+            ${imgHtml}
+            <div class="ph" style="display:${img ? "none":"flex"};">没有照片</div>
+          </div>
+          <div class="cardbody">
+            <div class="nameRow">
+              <div class="name">${escapeHtml(it.name)}</div>
+              <div class="id">${escapeHtml(it.item_id)}</div>
+            </div>
+
+            <div class="meta">
+              <div class="chip">Price<strong>${fmt.format(it.price)}</strong></div>
+              <div class="chip">Qty<strong>${fmt.format(it.qty)}</strong></div>
+            </div>
+
+            <div class="note">${escapeHtml(it.note || " ")}</div>
+
+            <div class="actions">
+              <div class="qtyCtl">
+                <button class="btn mini" data-act="dec" data-id="${escapeHtml(it.item_id)}">－</button>
+                <div class="qty">${fmt.format(it.qty)}</div>
+                <button class="btn mini primary" data-act="inc" data-id="${escapeHtml(it.item_id)}">＋</button>
+              </div>
+              <div style="display:flex; gap:8px;">
+                <button class="btn mini" data-act="edit" data-id="${escapeHtml(it.item_id)}">编辑</button>
+              </div>
+            </div>
+          </div>
+        `;
+
+        grid.appendChild(card);
+      }
+
+      // bind card buttons
+      grid.querySelectorAll("button[data-act]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const act = btn.dataset.act;
+          const id = btn.dataset.id;
+          if(act === "inc") incQty(id);
+          if(act === "dec") decQty(id);
+          if(act === "edit") openEdit(id);
+        });
+      });
+    }
+
+    // ---------- Operations ----------
+    async function incQty(id){
+        const it = items.find(x => x.item_id === id);
+        if(!it) return;
+        const new_Qty = Number(it.qty || 0) + 1;
+        it.qty = new_Qty;
+        render();
+
+        await postAction({action:"updateItem",item_id:id,patch:{qty:new_Qty}});
+        toast("good", "已更新", `${it.name}: 数量 +1`);
+        await resync();
+    }
+
+    async function decQty(id){
+        const it = items.find(x => x.item_id === id);
+        if(!it) return;
+        const newQty = Number(it.qty || 0) - 1;
+        it.qty = newQty;
+        render();
+
+        // 你要的规则：qty<=0 自动删除 → 直接 updateItem 让后端删（或调用 deleteItem 都行）
+        await postAction({ action:"updateItem", item_id:id, patch:{ qty:newQty }});
+        toast(newQty <= 0 ? "warn" : "good", newQty <= 0 ? "自动删除" : "已更新",
+                newQty <= 0 ? `${it.name}: 数量达到了 0` : `${it.name}: 数量 -1`);
+        
+        await resync();
+    }
+
+    async function upsertFromModal(){
+      const name = fName.value.trim();
+      const price = Number(fPrice.value);
+      const qty = Number(fQty.value);
+      const img_url = fImg.value.trim();
+      const note = fNote.value.trim();
+
+      if(!name){
+        toast("bad", "无效的", "需要一个名字.");
+        return;
+      }
+      if(!Number.isFinite(price) || price < 0){
+        toast("bad", "无效的", "价格必须是一个非负整数");
+        return;
+      }
+      if(!Number.isFinite(qty) || qty < 0){
+        toast("bad", "无效的", "数量必须是一个正整数");
+        return;
+      }
+
+      if(editingId){
+        const it = items.find(x => x.item_id === editingId);
+        if(!it) return;
+
+        // qty=0 => delete
+        if(qty <= 0){
+          items = items.filter(x => x.item_id !== editingId);
+          closeModal();
+          render();
+
+
+          await postAction({action:"deleteItem",item_id:it.item_id});
+          toast("warn", "已删除", `${it.name} 数量为 0 自动删除`);
+          await resync();
+          return;
+        }
+
+        it.name = name;
+        it.price = Math.floor(price);
+        it.qty = Math.floor(qty);
+        it.img_url = img_url;
+        it.note = note;
+        it.updated_at = new Date().toISOString();
+        closeModal();
+        render();
+
+        await postAction({action:"updateItem",item_id:it.item_id,patch:{name:it.name,price:it.price,qty:it.qty,img_url:it.img_url,note:it.note}});
+        toast("good", "已保存", `${it.name} 已更新.`);
+        await resync();
+        return;
+      }else{
+        if(qty <= 0){
+          toast("bad", "无效的", "新物品的数量必须是一个非负整数");
+          return;
+        }
+        const it = {
+          item_id: genId(),
+          name,
+          price: Math.floor(price),
+          qty: Math.floor(qty),
+          img_url,
+          note,
+          updated_at: new Date().toISOString()
+        };
+        items.unshift(it);
+        await postAction({action:"addItem",item:it});
+        toast("good", "已添加", `${it.name} 已添加.`);
+      }
+
+      closeModal();
+      render();
+    }
+
+    // ---------- Modal ----------
+    function openAdd(){
+      editingId = null;
+      modalTitle.textContent = "添加商品";
+      deleteBtn.style.display = "none";
+      fName.value = "";
+      fPrice.value = "0";
+      fQty.value = "1";
+      fImg.value = "";
+      fNote.value = "";
+      openModal();
+    }
+
+    function openEdit(id){
+      const it = items.find(x => x.item_id === id);
+      if(!it) return;
+      editingId = id;
+      modalTitle.textContent = "编辑商品";
+      deleteBtn.style.display = "inline-flex";
+      fName.value = it.name;
+      fPrice.value = String(it.price);
+      fQty.value = String(it.qty);
+      fImg.value = it.img_url || "";
+      fNote.value = it.note || "";
+      openModal();
+    }
+
+    function openModal(){
+      modalBack.style.display = "flex";
+      modalBack.setAttribute("aria-hidden", "false");
+      setTimeout(()=> fName.focus(), 10);
+    }
+
+    function closeModal(){
+      modalBack.style.display = "none";
+      modalBack.setAttribute("aria-hidden", "true");
+    }
+
+    async function deleteCurrent(){
+      if(!editingId) return;
+      const it = items.find(x => x.item_id === editingId);
+      items = items.filter(x => x.item_id !== editingId);
+      render();
+
+      await postAction({action:"deleteItem",item_id:it.item_id});
+      toast("warn", "已删除", `${it?.name || "Item"} 已被删除.`);
+      closeModal();
+    }
+
+    // ---------- Events ----------
+    searchInput.addEventListener("input", (e) => {
+      searchQ = e.target.value || "";
+      renderCurrent();
+    });
+
+    sortSelect.addEventListener("change", (e) => {
+      sortKey = e.target.value;
+      renderCurrent();
+    });
+
+    addBtn.addEventListener("click", openAdd);
+    closeModalBtn.addEventListener("click", closeModal);
+    cancelBtn.addEventListener("click", closeModal);
+    saveBtn.addEventListener("click", upsertFromModal);
+    deleteBtn.addEventListener("click", deleteCurrent);
+
+    modalBack.addEventListener("click", (e) => {
+      if(e.target === modalBack) closeModal();
+    });
+
+    window.addEventListener("keydown", (e) => {
+      if(e.key === "Escape") closeModal();
+      if(e.key === "Enter" && modalBack.style.display === "flex"){
+        // 防止 textarea 回车误触：按住 Shift 就不提交
+        if(document.activeElement === fNote && e.shiftKey) return;
+        // 在 modal 中按 Enter 提交
+        upsertFromModal();
+      }
+    });
+
+    // init
+    resync().catch(err => {
+        toast("bad","同步失败",String(err));
+        renderCurrent();
+    })
+  </script>
+</body>
+</html>
