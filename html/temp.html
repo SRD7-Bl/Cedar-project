@@ -1,7 +1,6 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-  <!-- BUILD: 2026-01-26 15:27:08 -->
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>物资管理系统</title>
@@ -433,120 +432,11 @@
     .toast.warn{ border-color: rgba(255,211,122,.35); }
     .toast.bad{ border-color: rgba(255,107,129,.35); }
 
-
-    /* Tabs + Shop */
-    .tabbar{
-      display:flex;
-      align-items:center;
-      gap:8px;
-      padding-right: 6px;
-      border-right: 1px solid rgba(255,255,255,.10);
-      margin-right: 8px;
-    }
-    .small{ font-size: 12px; }
-    .muted{ color: var(--muted); }
-
-    .shopForm{
-      display:flex;
-      gap:12px;
-      flex-wrap: wrap;
-      margin-top: 8px;
-      align-items: flex-start;
-    }
-    .cartList{
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-      margin-top: 6px;
-    }
-    .cartRow{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      border: 1px solid var(--line);
-      background: rgba(15,22,48,.35);
-      border-radius: 14px;
-      padding: 10px 10px;
-    }
-    .cartLeft{
-      display:flex;
-      flex-direction:column;
-      gap:4px;
-      min-width: 0;
-      flex: 1;
-    }
-    .cartName{
-      font-weight: 760;
-      font-size: 13px;
-      white-space: nowrap;
-      overflow:hidden;
-      text-overflow: ellipsis;
-    }
-    .cartMeta{ font-size: 12px; color: var(--muted); }
-    .cartCtl{
-      display:flex;
-      align-items:center;
-      gap:8px;
-      flex-wrap: nowrap;
-    }
-    .cartSummary{
-      margin-top: 12px;
-      border-top: 1px dashed rgba(255,255,255,.16);
-      padding-top: 12px;
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-      color: var(--muted);
-      font-size: 12px;
-    }
-    .cartSummary .row{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-    }
-    .cartSummary strong{ color: var(--text); font-size: 14px; }
-
     @media (max-width: 720px){
       .brand{ min-width: unset; }
       .formGrid{ grid-template-columns: 1fr; }
       .input{ min-width: 180px; }
     }
-    .overlay.hidden { display: none; }
-
-    .overlay{
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,.35);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-    }
-
-    .overlay-card{
-      background: rgb(1, 2, 69);
-      border-radius: 14px;
-      padding: 16px 18px;
-      width: min(360px, calc(100vw - 48px));
-      box-shadow: 0 10px 30px rgba(0,0,0,.25);
-      text-align: center;
-    }
-
-    .overlay-title{ font-weight: 700; margin-top: 10px; }
-    .overlay-sub{ font-size: 12px; opacity: .75; margin-top: 6px; }
-
-    .spinner{
-      width: 34px; height: 34px;
-      border: 4px solid rgba(255, 255, 255, 0.15);
-      border-top-color: rgba(103, 171, 255, 0.65);
-      border-radius: 50%;
-      margin: 0 auto;
-      animation: spin 0.9s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
   </style>
 </head>
 
@@ -558,16 +448,11 @@
         <div class="logo" aria-hidden="true"></div>
         <div class="titlewrap">
           <div class="title">物资管理系统</div>
-          <div class="subtitle" id="subtitleEl">UI Prototype · 图片卡片式物品管理</div>
+          <div class="subtitle">UI Prototype · 图片卡片式物品管理</div>
         </div>
       </div>
 
       <div class="controls">
-
-        <div class="tabbar" role="tablist" aria-label="模式切换">
-          <button class="btn mini primary" id="tabInvBtn" role="tab" aria-selected="true">库存</button>
-          <button class="btn mini" id="tabShopBtn" role="tab" aria-selected="false">购买</button>
-        </div>
         <div class="input" title="按名称/ID/备注搜索">
           <span class="hint">🔎</span>
           <input id="searchInput" placeholder="Search items..." />
@@ -587,97 +472,37 @@
       </div>
     </div>
 
-
-    <div id="invView">
-      <div class="section">
-        <div class="panel">
-          <h3>快速统计:</h3>
-          <div class="stats">
-            <div class="stat">
-              <div class="k">总物品种类数量</div>
-              <div class="v" id="statTotal">0</div>
-            </div>
-            <div class="stat">
-              <div class="k">总物品数量</div>
-              <div class="v" id="statQty">0</div>
-            </div>
-            <div class="stat">
-              <div class="k">总共价值</div>
-              <div class="v" id="statValue">0</div>
-            </div>
+    <div class="section">
+      <div class="panel">
+        <h3>快速统计:</h3>
+        <div class="stats">
+          <div class="stat">
+            <div class="k">总物品种类数量</div>
+            <div class="v" id="statTotal">0</div>
           </div>
-        </div>
-
-        <div class="panel">
-          <h3>规则</h3>
-          <div style="color:var(--muted); font-size:12px; line-height:1.5;">
-            • 物品支持图片展示（img url）<br/>
-            • 可添加/编辑物品：名字 / 价格 / 数量 / 图片 / 备注<br/>
-            • 通过 + / - 快速调整库存<br/>
-            • <b style="color:var(--text)">数量为0 → 自动删除该物品</b><br/>
+          <div class="stat">
+            <div class="k">总物品数量</div>
+            <div class="v" id="statQty">0</div>
+          </div>
+          <div class="stat">
+            <div class="k">总共价值</div>
+            <div class="v" id="statValue">0</div>
           </div>
         </div>
       </div>
 
-      <div class="grid" id="grid"></div>
-      <!-- /#invView -->
+      <div class="panel">
+        <h3>规则</h3>
+        <div style="color:var(--muted); font-size:12px; line-height:1.5;">
+          • 物品支持图片展示（img url）<br/>
+          • 可添加/编辑物品：名字 / 价格 / 数量 / 图片 / 备注<br/>
+          • 通过 + / - 快速调整库存<br/>
+          • <b style="color:var(--text)">数量为0 → 自动删除该物品</b><br/>
+        </div>
+      </div>
     </div>
 
-    <div id="shopView" style="display:none;">
-      <div class="section">
-        <div class="panel">
-          <h3>购买 / 兑换（会自动扣积分 + 出库）</h3>
-
-          <div class="shopForm">
-            <div class="field" style="flex:1; min-width:220px;">
-              <label>选择学生</label>
-              <select id="shopStudentSelect"></select>
-              <div class="small muted" id="shopStudentInfo" style="margin-top:6px;">未选择</div>
-            </div>
-
-            <div class="field" style="flex:1; min-width:220px;">
-              <label>操作员（operator）</label>
-              <input id="shopOperatorInput" type="text" value="Teacher" />
-              <div class="small muted" style="margin-top:6px;">建议写老师姓名或角色（例如：Teacher A）</div>
-            </div>
-
-            <div class="field" style="flex:1; min-width:220px;">
-              <label>备注（可选）</label>
-              <input id="shopNoteInput" type="text" placeholder="例如：课间兑换 / 代领等" />
-              <div class="small muted" style="margin-top:6px;">会写入积分系统流水 description</div>
-            </div>
-          </div>
-
-          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
-            <button class="btn" id="shopResyncBtn">🔄 同步（库存+积分）</button>
-            <button class="btn" id="shopClearCartBtn">🧹 清空购物车</button>
-            <button class="btn primary" id="shopCheckoutBtn">✅ 结账（扣分并出库）</button>
-          </div>
-
-          <div class="small muted" style="margin-top:10px; line-height:1.55;">
-            • 加入购物车时会限制数量 ≤ 当前库存 qty<br/>
-            • 结账前会自动再同步一次，避免页面数据过期<br/>
-            • 生成 order_id 写入积分流水备注，防止误操作/便于追溯
-          </div>
-        </div>
-
-        <div class="panel">
-          <h3>购物车</h3>
-          <div id="cartList" class="cartList"></div>
-          <div class="cartSummary">
-            <div class="row"><span>商品种类</span><strong id="cartKinds">0</strong></div>
-            <div class="row"><span>总件数</span><strong id="cartQty">0</strong></div>
-            <div class="row"><span>总价格（积分）</span><strong id="cartTotal">0</strong></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="grid" id="shopGrid"></div>
-
-      <div class="footerbar">
-        Tip：这是 “购买窗口” 的 MVP：单人操作、课间兑换。后续如果要更稳，可以把 “扣分 + 出库” 合并成后端一个 redeem action 做原子化。
-      </div>
-    </div> <!-- /#shopView -->
+    <div class="grid" id="grid"></div>
 
   </div>
 
@@ -725,15 +550,6 @@
   <!-- Toast -->
   <div class="toastWrap" id="toastWrap"></div>
 
-  <!-- Loading Overlay -->
-   <div id="loadingOverlay" class="overlay hidden">
-    <div class="overlay-card">
-      <div class="spinner"></div>
-      <div class="overlay-title">正在结账...</div>
-      <div class="overlay-sub">请等待。不要关闭页面。</div>
-    </div>
-   </div>
-
   <script>
     // ---------- Upload/Download Data From SpreadSheet ----------
     /** @type {{item_id:string,name:string,price:number,qty:number,img_url:string,note:string,updated_at:string}[]} */
@@ -770,7 +586,7 @@
         // 兼容表里 update_at 与你代码里的 updated_at
         updated_at: String(it.update_at ?? it.updated_at ?? "")
     }));
-    renderCurrent();
+    render();
     }
 
 
@@ -804,505 +620,6 @@
     const fNote = document.getElementById("fNote");
 
     const toastWrap = document.getElementById("toastWrap");
-
-    // ---------- Dual System Link (Shop -> Point DB) ----------
-    // Points system Apps Script URL (copy from Point Manage Sys)
-    const POINT_API_URL = "https://script.google.com/macros/s/AKfycbwhk23YntQ2bvr8fRjFuL1YZ-3LBAH_8HOq6NsDFdp1NUL02zAo6u2NkeQeG-Lf5HXj/exec";
-
-    let activeTab = "inventory"; // "inventory" | "shop"
-
-    /** cart: item_id -> qty */
-    let cart = {};
-
-    // points cache
-    /** @type {{id:string,name:string,grade:string,class:string,points:number}[]} */
-    let pointStudents = [];
-    /** @type {{event_id:string,time:string,student_id:string,delta:number,type:string,description:string,operator:string}[]} */
-    let pointEvents = [];
-    const pointsById = new Map();
-
-    // Tab DOM
-    const invView = document.getElementById("invView");
-    const shopView = document.getElementById("shopView");
-    const subtitleEl = document.getElementById("subtitleEl");
-    const tabInvBtn = document.getElementById("tabInvBtn");
-    const tabShopBtn = document.getElementById("tabShopBtn");
-
-    // Shop DOM
-    const shopStudentSelect = document.getElementById("shopStudentSelect");
-    const shopStudentInfo = document.getElementById("shopStudentInfo");
-    const shopOperatorInput = document.getElementById("shopOperatorInput");
-    const shopNoteInput = document.getElementById("shopNoteInput");
-    const shopResyncBtn = document.getElementById("shopResyncBtn");
-    const shopClearCartBtn = document.getElementById("shopClearCartBtn");
-    const shopCheckoutBtn = document.getElementById("shopCheckoutBtn");
-    const shopGrid = document.getElementById("shopGrid");
-    const cartList = document.getElementById("cartList");
-    const cartKinds = document.getElementById("cartKinds");
-    const cartQty = document.getElementById("cartQty");
-    const cartTotal = document.getElementById("cartTotal");
-
-    function renderCurrent(){
-      if(activeTab === "inventory") render();
-      else renderShop();
-    }
-
-    function setTab(tab){
-      activeTab = tab;
-      const isInv = tab === "inventory";
-      invView.style.display = isInv ? "" : "none";
-      shopView.style.display = isInv ? "none" : "";
-
-      // Buttons
-      tabInvBtn.classList.toggle("primary", isInv);
-      tabShopBtn.classList.toggle("primary", !isInv);
-      tabInvBtn.setAttribute("aria-selected", isInv ? "true" : "false");
-      tabShopBtn.setAttribute("aria-selected", !isInxv ? "true" : "false");
-
-      // In shop mode, hide inventory-only controls
-      addBtn.style.display = isInv ? "inline-flex" : "none";
-
-      // Subtitle
-      if(subtitleEl){
-        subtitleEl.textContent = isInv
-          ? "库存管理 · 图片卡片式物品管理"
-          : "购买/兑换 · 购物车 + 结账扣分";
-      }
-
-      // Refresh view
-      if(!isInv){
-        // ensure points are loaded at least once
-        if(pointStudents.length === 0) {
-          resyncPoint().catch(err => {
-            console.error(err);
-            toast("bad", "积分系统同步失败", String(err));
-          });
-        }
-        renderShop();
-      }else{
-        render();
-      }
-    }
-
-    tabInvBtn.addEventListener("click", ()=> setTab("inventory"));
-    tabShopBtn.addEventListener("click", ()=> setTab("shop"));
-
-    // ---------- Point DB helpers ----------
-    async function loadPointStudents(){
-      const r = await fetch(`${POINT_API_URL}?action=students&t=${Date.now()}`);
-      const data = await r.json();
-      if(data && data.ok === false) throw new Error(data.msg || "loadPointStudents failed");
-      // allow either array or wrapped
-      return Array.isArray(data) ? data : (data.students || data.data || []);
-    }
-
-    async function loadPointEvents(){
-      const r = await fetch(`${POINT_API_URL}?action=events&t=${Date.now()}`);
-      const data = await r.json();
-      if(data && data.ok === false) throw new Error(data.msg || "loadPointEvents failed");
-      return Array.isArray(data) ? data : (data.events || data.data || []);
-    }
-
-    async function appendPointEvent(e){
-      const r = await fetch(POINT_API_URL, {
-        method: "POST",
-        headers: {"Content-Type":"text/plain;charset=utf-8"},
-        body: JSON.stringify({action:"appendEvent", event:e})
-      });
-      const data = await r.json();
-      if(!data.ok) throw new Error(data.msg || "appendEvent failed");
-      return data;
-    }
-
-    function rebuildPoints(){
-      pointsById.clear();
-      for(const s of pointStudents){
-        pointsById.set(String(s.id), 0);
-      }
-      for(const e of pointEvents){
-        const sid = String(e.student_id);
-        if(!pointsById.has(sid)) pointsById.set(sid, 0);
-        pointsById.set(sid, (pointsById.get(sid) || 0) + Number(e.delta || 0));
-      }
-      // write back
-      pointStudents = pointStudents.map(s => ({...s, points: pointsById.get(String(s.id)) || 0}));
-    }
-
-    function fillStudentSelect(){
-      if(!shopStudentSelect) return;
-      const cur = shopStudentSelect.value;
-      shopStudentSelect.innerHTML = "";
-      const opt0 = document.createElement("option");
-      opt0.value = "";
-      opt0.textContent = "— 请选择学生 —";
-      shopStudentSelect.appendChild(opt0);
-
-      const sorted = pointStudents.slice().sort((a,b)=> {
-        const ga = String(a.grade||"");
-        const gb = String(b.grade||"");
-        if(ga !== gb) return ga.localeCompare(gb, "zh-Hans-CN", {numeric:true});
-        return String(a.name||"").localeCompare(String(b.name||""), "zh-Hans-CN");
-      });
-      for(const s of sorted){
-        const o = document.createElement("option");
-        o.value = String(s.id);
-        o.textContent = `${s.grade} · ${s.name} · ${s.class} · ${s.points}分`;
-        shopStudentSelect.appendChild(o);
-      }
-      if(cur) shopStudentSelect.value = cur;
-    }
-
-    function updateSelectedStudentInfo(){
-      const sid = shopStudentSelect.value;
-      if(!sid){
-        shopStudentInfo.textContent = "未选择";
-        return;
-      }
-      const s = pointStudents.find(x => String(x.id) === String(sid));
-      if(!s){
-        shopStudentInfo.textContent = `ID ${sid}（未在本地缓存中找到）`;
-        return;
-      }
-      shopStudentInfo.textContent = `${s.grade} · ${s.class} · 当前积分：${s.points}`;
-    }
-
-    async function resyncPoint(){
-      const [sRaw, eRaw] = await Promise.all([loadPointStudents(), loadPointEvents()]);
-      pointStudents = (sRaw || []).map(s => ({
-        id: String(s.id ?? s.student_id ?? ""),
-        name: String(s.name ?? ""),
-        grade: String(s.grade ?? ""),
-        class: String(s.class ?? ""),
-        points: Number(s.points ?? 0)
-      }));
-      pointEvents = (eRaw || []).map(e => ({
-        event_id: String(e.event_id ?? ""),
-        time: String(e.time ?? ""),
-        student_id: String(e.student_id ?? ""),
-        delta: Number(e.delta ?? 0),
-        type: String(e.type ?? ""),
-        description: String(e.description ?? ""),
-        operator: String(e.operator ?? "")
-      }));
-      rebuildPoints();
-      fillStudentSelect();
-      updateSelectedStudentInfo();
-    }
-
-    shopStudentSelect?.addEventListener("change", ()=> updateSelectedStudentInfo());
-
-    shopResyncBtn?.addEventListener("click", async ()=> {
-      try{
-        shopResyncBtn.disabled = true;
-        await Promise.all([resync(), resyncPoint()]);
-        toast("good", "已同步", "库存与积分系统已刷新。");
-      }catch(err){
-        console.error(err);
-        toast("bad", "同步失败", String(err));
-      }finally{
-        shopResyncBtn.disabled = false;
-      }
-    });
-
-    shopClearCartBtn?.addEventListener("click", ()=> {
-      cart = {};
-      renderShop();
-      toast("warn", "已清空", "购物车已清空。");
-    });
-
-    // ---------- Cart helpers ----------
-    function cartKindsCount(){
-      return Object.keys(cart).length;
-    }
-    function cartQtyCount(){
-      return Object.values(cart).reduce((a,b)=>a+Number(b||0),0);
-    }
-    function cartTotalCost(){
-      let total = 0;
-      for(const [id, q] of Object.entries(cart)){
-        const it = items.find(x => x.item_id === id);
-        if(!it) continue;
-        total += Number(it.price||0) * Number(q||0);
-      }
-      return total;
-    }
-
-    function addToCart(itemId){
-      const it = items.find(x => x.item_id === itemId);
-      if(!it) return;
-      if(it.qty <= 0){
-        toast("warn", "库存不足", "该商品库存为 0。");
-        return;
-      }
-      const cur = Number(cart[itemId] || 0);
-      const next = Math.min(cur + 1, Number(it.qty));
-      cart[itemId] = next;
-      if(next === cur) {
-        toast("warn", "已达上限", "购物车数量不能超过当前库存。");
-      }
-      renderShop();
-    }
-
-    function setCartQty(itemId, qty){
-      const it = items.find(x => x.item_id === itemId);
-      if(!it) return;
-      const q = Math.max(0, Math.floor(Number(qty||0)));
-      if(q === 0){
-        delete cart[itemId];
-      }else{
-        cart[itemId] = Math.min(q, Number(it.qty));
-      }
-      renderShop();
-    }
-
-    function clampCartToStock(){
-      let changed = false;
-      for(const [id, q] of Object.entries(cart)){
-        const it = items.find(x => x.item_id === id);
-        if(!it || it.qty <= 0){
-          delete cart[id];
-          changed = true;
-          continue;
-        }
-        const cap = Number(it.qty);
-        if(Number(q) > cap){
-          cart[id] = cap;
-          changed = true;
-        }
-      }
-      return changed;
-    }
-
-    function renderCart(){
-      if(!cartList) return;
-
-      const entries = Object.entries(cart);
-      cartList.innerHTML = "";
-      if(entries.length === 0){
-        const empty = document.createElement("div");
-        empty.className = "muted small";
-        empty.style.padding = "6px 2px";
-        empty.textContent = "购物车为空。右侧商品卡片点“加入购物车”。";
-        cartList.appendChild(empty);
-      }else{
-        for(const [id, q] of entries){
-          const it = items.find(x => x.item_id === id);
-          if(!it) continue;
-          const row = document.createElement("div");
-          row.className = "cartRow";
-          row.innerHTML = `
-            <div class="cartLeft">
-              <div class="cartName">${escapeHtml(it.name)}</div>
-              <div class="cartMeta">单价 ${it.price} · 库存 ${it.qty} · 小计 ${it.price * q}</div>
-            </div>
-            <div class="cartCtl">
-              <button class="btn mini" data-act="minus" data-id="${id}">－</button>
-              <div class="qty">${q}</div>
-              <button class="btn mini" data-act="plus" data-id="${id}">＋</button>
-              <button class="btn mini danger" data-act="del" data-id="${id}">✕</button>
-            </div>
-          `;
-          cartList.appendChild(row);
-        }
-
-        // bind
-        [...cartList.querySelectorAll("button[data-act]")].forEach(btn => {
-          const act = btn.getAttribute("data-act");
-          const id = btn.getAttribute("data-id");
-          btn.onclick = ()=> {
-            const cur = Number(cart[id] || 0);
-            if(act === "minus") setCartQty(id, cur - 1);
-            if(act === "plus") setCartQty(id, cur + 1);
-            if(act === "del") setCartQty(id, 0);
-          };
-        });
-      }
-
-      cartKinds.textContent = String(cartKindsCount());
-      cartQty.textContent = String(cartQtyCount());
-      cartTotal.textContent = String(cartTotalCost());
-    }
-
-    function renderShop(){
-      if(!shopGrid) return;
-
-      // Keep student info refreshed
-      updateSelectedStudentInfo();
-
-      const q = (searchQ || "").trim().toLowerCase();
-      let list = items.filter(it => it.qty > 0);
-      if(q){
-        list = list.filter(it =>
-          (it.name||"").toLowerCase().includes(q) ||
-          (it.item_id||"").toLowerCase().includes(q) ||
-          (it.note||"").toLowerCase().includes(q)
-        );
-      }
-
-      // reuse existing sortKey
-      list.sort((a,b)=> {
-        const k = sortKey;
-        if(k === "name_asc") return String(a.name).localeCompare(String(b.name), "zh-Hans-CN");
-        if(k === "name_desc") return String(b.name).localeCompare(String(a.name), "zh-Hans-CN");
-        if(k === "price_asc") return a.price - b.price;
-        if(k === "price_desc") return b.price - a.price;
-        if(k === "qty_asc") return a.qty - b.qty;
-        if(k === "qty_desc") return b.qty - a.qty;
-        return 0;
-      });
-
-      shopGrid.innerHTML = "";
-      for(const it of list){
-        const inCart = Number(cart[it.item_id] || 0);
-        const left = Number(it.qty) - inCart;
-        const card = document.createElement("div");
-        card.className = "card";
-        const img = it.img_url ? `<img src="${escapeHtml(it.img_url)}" alt="img" onerror="this.style.display='none'; this.parentElement.querySelector('.ph').style.display='flex';" />` : "";
-        card.innerHTML = `
-          <div class="imgwrap">
-            ${img}
-            <div class="ph" style="display:${it.img_url ? "none" : "flex"};">No Image</div>
-          </div>
-          <div class="cardbody">
-            <div class="nameRow">
-              <div class="name">${escapeHtml(it.name)}</div>
-              <div class="id">${escapeHtml(it.item_id)}</div>
-            </div>
-            <div class="meta">
-              <div class="chip">价格<strong>${it.price}</strong></div>
-              <div class="chip">库存<strong>${it.qty}</strong></div>
-              <div class="chip">车内<strong>${inCart}</strong></div>
-            </div>
-            <div class="note">${escapeHtml(it.note || "")}</div>
-
-            <div class="actions">
-              <div class="qtyCtl">
-                <button class="btn mini" data-act="minus" data-id="${it.item_id}">－</button>
-                <div class="qty">${inCart}</div>
-                <button class="btn mini" data-act="plus" data-id="${it.item_id}">＋</button>
-              </div>
-              <button class="btn mini primary" data-act="add" data-id="${it.item_id}">加入购物车</button>
-            </div>
-
-            <div class="small muted" style="margin-top:10px;">
-              还可加入：${left}
-            </div>
-          </div>
-        `;
-        shopGrid.appendChild(card);
-      }
-
-      // bind
-      [...shopGrid.querySelectorAll("button[data-act]")].forEach(btn => {
-        const act = btn.getAttribute("data-act");
-        const id = btn.getAttribute("data-id");
-        btn.onclick = ()=> {
-          const cur = Number(cart[id] || 0);
-          if(act === "minus") setCartQty(id, cur - 1);
-          if(act === "plus") setCartQty(id, cur + 1);
-          if(act === "add") addToCart(id);
-        };
-      });
-
-      // Top pill: show cart count in shop view
-      countPill.textContent = `${cartQtyCount()} 件(车内)`;
-      renderCart();
-    }
-
-    // ---------- Checkout ----------
-    async function checkout(){
-      showLoading("Processing checkout...");
-      try{
-        if(cartKindsCount() === 0){
-        toast("warn", "购物车为空", "先把商品加入购物车。");
-        return;
-        }
-        const sid = shopStudentSelect.value;
-        if(!sid){
-          toast("warn", "未选学生", "请选择要扣分的学生。");
-          return;
-        }
-
-        try{
-          shopCheckoutBtn.disabled = true;
-
-          // Hard sync before commit
-          await Promise.all([resync(), resyncPoint()]);
-
-          const changed = clampCartToStock();
-          if(changed){
-            toast("warn", "购物车已调整", "库存变化导致购物车数量被自动修正。");
-          }
-          if(cartKindsCount() === 0){
-            toast("warn", "购物车已空", "库存变化导致购物车被清空，请重新选择。");
-            return;
-          }
-
-          const total = cartTotalCost();
-          const stu = pointStudents.find(x => String(x.id) === String(sid));
-          const curPts = stu ? Number(stu.points || 0) : (pointsById.get(String(sid)) || 0);
-          if(total <= 0){
-            toast("warn", "总价为 0", "请检查商品价格。");
-            return;
-          }
-          if(curPts < total){
-            toast("bad", "积分不足", `当前 ${curPts} 分，结账需要 ${total} 分。`);
-            return;
-          }
-
-          const orderId = `ORD-${new Date().toISOString().slice(0,10).replaceAll("-","")}-${crypto.randomUUID().slice(0,8)}`;
-          const operator = (shopOperatorInput.value || "Teacher").trim();
-          const note = (shopNoteInput.value || "").trim();
-
-          // Build description
-          const parts = Object.entries(cart).map(([id,q]) => {
-            const it = items.find(x=>x.item_id===id);
-            const n = it ? it.name : id;
-            return `${n}x${q}`;
-          });
-          const desc = `[${orderId}] 兑换：` + parts.join("，") + (note ? `；备注：${note}` : "");
-
-          // Step 1:扣分（append event）
-          const ev = {
-            event_id: crypto.randomUUID(),
-            time: new Date().toISOString(),
-            student_id: String(sid),
-            delta: -Math.abs(total),
-            type: "兑换",
-            description: desc,
-            operator
-          };
-          await appendPointEvent(ev);
-
-          // Step 2:出库（逐个更新库存）
-          for(const [id, q] of Object.entries(cart)){
-            const it = items.find(x => x.item_id === id);
-            if(!it) continue;
-            const newQty = Math.max(0, Number(it.qty) - Number(q));
-            await postAction({action:"updateItem", item_id:id, patch:{qty:newQty}});
-          }
-
-          // refresh
-          cart = {};
-          shopNoteInput.value = "";
-          await Promise.all([resync(), resyncPoint()]);
-          renderShop();
-          toast("good", "结账成功", `已扣 ${total} 分，并完成出库。`);
-          }catch(err){
-            console.error(err);
-            // Best effort: resync to keep UI consistent
-            try{ await Promise.all([resync(), resyncPoint()]); }catch(_e){}
-            toast("bad", "结账失败", String(err));
-          }finally{
-            shopCheckoutBtn.disabled = false;
-          }
-      }finally{
-        hiddenLoading();
-      }
-    }
-
-    shopCheckoutBtn?.addEventListener("click", checkout);
-
 
     // ---------- Helpers ----------
     const fmt = new Intl.NumberFormat("en-US");
@@ -1381,22 +698,6 @@
       });
 
       return list;
-    }
-
-    function showLoading(msg){
-      const ov = document.getElementById("loadingOverlay");
-      if(!ov)return;
-      ov.classList.remove("hidden");
-      if(msg){
-        const t = ov.querySelector(".overlay-title");
-        if(t) t.textContent = msg;
-      }
-    }
-
-    function hiddenLoading(){
-      const ov = document.getElementById("loadingOverlay");
-      if(!ov)return;
-      ov.classList.add("hidden");
     }
 
     // ---------- Render ----------
@@ -1614,12 +915,12 @@
     // ---------- Events ----------
     searchInput.addEventListener("input", (e) => {
       searchQ = e.target.value || "";
-      renderCurrent();
+      render();
     });
 
     sortSelect.addEventListener("change", (e) => {
       sortKey = e.target.value;
-      renderCurrent();
+      render();
     });
 
     addBtn.addEventListener("click", openAdd);
@@ -1644,8 +945,8 @@
 
     // init
     resync().catch(err => {
-        toast("bad","同步失败",String(err));
-        renderCurrent();
+        toast("bad","同步失败",string(err));
+        render();
     })
   </script>
 </body>
