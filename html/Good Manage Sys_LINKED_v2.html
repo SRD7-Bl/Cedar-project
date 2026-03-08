@@ -735,27 +735,44 @@
    </div>
 
   <script>
-    // ---------- Upload/Download Data From SpreadSheet ----------
+    // ---------- Backend API ----------
     /** @type {{item_id:string,name:string,price:number,qty:number,img_url:string,note:string,updated_at:string}[]} */
     let items = [];
-    const API_URL = "https://script.google.com/macros/s/AKfycbyFB_DF0COgRnRxW47Dhbpj_dOWvhAQrjng1orc7SJw7ZbYSAmmfiUOfuFEODSqSBAtVA/exec";
+    const GMS_API_URL = "http://localhost:8787/api/gms/items";
+    const POINT_API_URL = "http://localhost:8787/api/points";
 
     async function loadItems(){
-        const r = await fetch(`${API_URL}?action=items&t=${Date.now()}`);
-        const data = await r.json();
-        if(!data.ok) throw new Error(data.msg || "loadItems failed");
-        return data.items || [];
+        const r = await fetch(`${GMS_API_URL}?t=${Date.now()}`);
+        if(!r.ok) throw new Error(`loadItems HTTP ${r.status}`);
+        return await r.json();
     }
 
-    async function postAction(payload){
-        const r = await fetch(API_URL, {
+    async function createItem(item){
+        const r = await fetch(GMS_API_URL, {
             method: "POST",
-            headers: {"Content-Type":"text/plain;charset=utf-8"},
-            body: JSON.stringify(payload)
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify(item)
         });
-        const data = await r.json();
-        if(!data.ok) throw new Error(data.msg || `${payload.action} failed`);
-        return data;
+        if(!r.ok) throw new Error(`createItem HTTP ${r.status}`);
+        return await r.json().catch(()=> ({}));
+    }
+
+    async function updateItem(item_id, patch){
+        const r = await fetch(`${GMS_API_URL}/${encodeURIComponent(item_id)}`, {
+            method: "PATCH",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify(patch)
+        });
+        if(!r.ok) throw new Error(`updateItem HTTP ${r.status}`);
+        return await r.json().catch(()=> ({}));
+    }
+
+    async function deleteItem(item_id){
+        const r = await fetch(`${GMS_API_URL}/${encodeURIComponent(item_id)}`, {
+            method: "DELETE"
+        });
+        if(!r.ok) throw new Error(`deleteItem HTTP ${r.status}`);
+        return await r.json().catch(()=> ({}));
     }
 
     async function resync(){
@@ -806,8 +823,6 @@
     const toastWrap = document.getElementById("toastWrap");
 
     // ---------- Dual System Link (Shop -> Point DB) ----------
-    // Points system Apps Script URL (copy from Point Manage Sys)
-    const POINT_API_URL = "https://script.google.com/macros/s/AKfycbwhk23YntQ2bvr8fRjFuL1YZ-3LBAH_8HOq6NsDFdp1NUL02zAo6u2NkeQeG-Lf5HXj/exec";
 
     let activeTab = "inventory"; // "inventory" | "shop"
 
@@ -857,7 +872,7 @@
       tabInvBtn.classList.toggle("primary", isInv);
       tabShopBtn.classList.toggle("primary", !isInv);
       tabInvBtn.setAttribute("aria-selected", isInv ? "true" : "false");
-      tabShopBtn.setAttribute("aria-selected", !isInxv ? "true" : "false");
+      tabShopBtn.setAttribute("aria-selected", !isInv ? "true" : "false");
 
       // In shop mode, hide inventory-only controls
       addBtn.style.display = isInv ? "inline-flex" : "none";
@@ -889,29 +904,25 @@
 
     // ---------- Point DB helpers ----------
     async function loadPointStudents(){
-      const r = await fetch(`${POINT_API_URL}?action=students&t=${Date.now()}`);
-      const data = await r.json();
-      if(data && data.ok === false) throw new Error(data.msg || "loadPointStudents failed");
-      // allow either array or wrapped
-      return Array.isArray(data) ? data : (data.students || data.data || []);
+      const r = await fetch(`${POINT_API_URL}/students?t=${Date.now()}`);
+      if(!r.ok) throw new Error(`loadPointStudents HTTP ${r.status}`);
+      return await r.json();
     }
 
     async function loadPointEvents(){
-      const r = await fetch(`${POINT_API_URL}?action=events&t=${Date.now()}`);
-      const data = await r.json();
-      if(data && data.ok === false) throw new Error(data.msg || "loadPointEvents failed");
-      return Array.isArray(data) ? data : (data.events || data.data || []);
+      const r = await fetch(`${POINT_API_URL}/events?t=${Date.now()}`);
+      if(!r.ok) throw new Error(`loadPointEvents HTTP ${r.status}`);
+      return await r.json();
     }
 
     async function appendPointEvent(e){
-      const r = await fetch(POINT_API_URL, {
+      const r = await fetch(`${POINT_API_URL}/events`, {
         method: "POST",
-        headers: {"Content-Type":"text/plain;charset=utf-8"},
-        body: JSON.stringify({action:"appendEvent", event:e})
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(e)
       });
-      const data = await r.json();
-      if(!data.ok) throw new Error(data.msg || "appendEvent failed");
-      return data;
+      if(!r.ok) throw new Error(`appendPointEvent HTTP ${r.status}`);
+      return await r.json().catch(()=> ({}));
     }
 
     function rebuildPoints(){
@@ -1279,7 +1290,7 @@
             const it = items.find(x => x.item_id === id);
             if(!it) continue;
             const newQty = Math.max(0, Number(it.qty) - Number(q));
-            await postAction({action:"updateItem", item_id:id, patch:{qty:newQty}});
+            await updateItem(id, {qty:newQty});
           }
 
           // refresh
@@ -1469,7 +1480,7 @@
         it.qty = new_Qty;
         render();
 
-        await postAction({action:"updateItem",item_id:id,patch:{qty:new_Qty}});
+        await updateItem(id, {qty:new_Qty});
         toast("good", "已更新", `${it.name}: 数量 +1`);
         await resync();
     }
@@ -1482,7 +1493,7 @@
         render();
 
         // 你要的规则：qty<=0 自动删除 → 直接 updateItem 让后端删（或调用 deleteItem 都行）
-        await postAction({ action:"updateItem", item_id:id, patch:{ qty:newQty }});
+        await updateItem(id, {qty:newQty});
         toast(newQty <= 0 ? "warn" : "good", newQty <= 0 ? "自动删除" : "已更新",
                 newQty <= 0 ? `${it.name}: 数量达到了 0` : `${it.name}: 数量 -1`);
         
@@ -1520,7 +1531,7 @@
           render();
 
 
-          await postAction({action:"deleteItem",item_id:it.item_id});
+          await deleteItem(it.item_id);
           toast("warn", "已删除", `${it.name} 数量为 0 自动删除`);
           await resync();
           return;
@@ -1535,7 +1546,14 @@
         closeModal();
         render();
 
-        await postAction({action:"updateItem",item_id:it.item_id,patch:{name:it.name,price:it.price,qty:it.qty,img_url:it.img_url,note:it.note}});
+        await updateItem(it.item_id, {
+          name: it.name,
+          price: it.price,
+          qty: it.qty,
+          img_url: it.img_url,
+          note: it.note,
+          update_at: it.updated_at
+        });
         toast("good", "已保存", `${it.name} 已更新.`);
         await resync();
         return;
@@ -1554,7 +1572,15 @@
           updated_at: new Date().toISOString()
         };
         items.unshift(it);
-        await postAction({action:"addItem",item:it});
+        await createItem({
+          item_id: it.item_id,
+          name: it.name,
+          price: it.price,
+          qty: it.qty,
+          img_url: it.img_url,
+          note: it.note,
+          update_at: it.updated_at
+        });
         toast("good", "已添加", `${it.name} 已添加.`);
       }
 
@@ -1606,7 +1632,7 @@
       items = items.filter(x => x.item_id !== editingId);
       render();
 
-      await postAction({action:"deleteItem",item_id:it.item_id});
+      await deleteItem(it.item_id);
       toast("warn", "已删除", `${it?.name || "Item"} 已被删除.`);
       closeModal();
     }
