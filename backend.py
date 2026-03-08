@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 import httpx
 from fastapi import FastAPI, HTTPException, Path as FPath
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 """
 Feishu (Lark) Bitable backend for Cedar Sys - Point Manage System
@@ -73,19 +73,29 @@ app.add_middleware(
 class EventCreate(BaseModel):
     event_id: str
     time: str
-    student_id: str
-    delta: float
+    student_id: str | int | float
+    delta: float | int | str
     type: str
     description: Optional[str] = ""
     operator: Optional[str] = ""
 
+    @field_validator("student_id", "delta", mode="before")
+    @classmethod
+    def normalize_numeric_strings(cls, value: Any) -> Any:
+        return _coerce_number_like(value)
+
 class EventPatch(BaseModel):
     time: Optional[str] = None
-    student_id: Optional[str] = None
-    delta: Optional[float] = None
+    student_id: Optional[str | int | float] = None
+    delta: Optional[float | int | str] = None
     type: Optional[str] = None
     description: Optional[str] = None
     operator: Optional[str] = None
+
+    @field_validator("student_id", "delta", mode="before")
+    @classmethod
+    def normalize_numeric_strings(cls, value: Any) -> Any:
+        return _coerce_number_like(value)
 
 
 class TokenCache:
@@ -111,6 +121,106 @@ def _check_env() -> None:
             status_code=500,
             detail=f"Missing env vars: {', '.join(missing)}. Set them before running.",
         )
+
+def _extract_bitable_scalar(value: Any) -> Any:
+    """
+    Normalize Feishu Bitable field values into plain JSON scalars whenever possible.
+    Common text cells come back as rich-text arrays like:
+      [{"text": "G1", "type": "text"}]
+    """
+    if value is None:
+        return None
+
+    if isinstance(value, list):
+        if not value:
+            return ""
+
+        if all(isinstance(item, dict) and "text" in item for item in value):
+            return "".join(str(item.get("text", "")) for item in value).strip()
+
+        if all(isinstance(item, dict) for item in value):
+            for key in ("name", "text", "value", "id"):
+                parts = [
+                    str(item.get(key)).strip()
+                    for item in value
+                    if item.get(key) not in (None, "")
+                ]
+                if parts:
+                    return ", ".join(parts)
+
+        parts = [str(item).strip() for item in value if item not in (None, "")]
+        return ", ".join(parts)
+
+    if isinstance(value, dict):
+        for key in ("text", "name", "value", "id"):
+            if value.get(key) not in (None, ""):
+                return value.get(key)
+        return str(value)
+
+    if isinstance(value, str):
+        return value.strip()
+
+    return value
+
+def _coerce_number_like(value: Any) -> Any:
+    """
+    Backward compatibility for payloads coming from the old spreadsheet-based front-end:
+    numeric columns were often posted as strings like "1001" or "-5".
+    Feishu Number fields require actual numbers.
+    """
+    if value is None:
+        return None
+
+    if isinstance(value, bool):
+        return value
+
+    if isinstance(value, (int, float)):
+        return value
+
+    if isinstance(value, str):
+        text = value.strip()
+        if text == "":
+            return text
+        try:
+            if any(ch in text for ch in (".", "e", "E")):
+                return float(text)
+            return int(text)
+        except ValueError:
+            return text
+
+    return value
+
+def _normalize_student_row(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    normalized = {
+        "id": _extract_bitable_scalar(row.get("id")),
+        "grade": _extract_bitable_scalar(row.get("grade")),
+        "class": _extract_bitable_scalar(row.get("class")),
+        "name": _extract_bitable_scalar(row.get("name")),
+    }
+
+    if all(normalized[key] in (None, "") for key in ("id", "grade", "class", "name")):
+        return None
+
+    return normalized
+
+def _normalize_event_row(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    normalized = {
+        "event_id": _extract_bitable_scalar(row.get("event_id")),
+        "time": _extract_bitable_scalar(row.get("time")),
+        "student_id": _extract_bitable_scalar(row.get("student_id")),
+        "delta": _extract_bitable_scalar(row.get("delta")),
+        "type": _extract_bitable_scalar(row.get("type")),
+        "description": _extract_bitable_scalar(row.get("description")),
+        "operator": _extract_bitable_scalar(row.get("operator")),
+    }
+
+    if all(
+        normalized[key] in (None, "")
+        for key in ("event_id", "time", "student_id", "delta", "type", "description", "operator")
+    ):
+        return None
+
+    return normalized
 
 async def get_tenant_access_token(client: httpx.AsyncClient) -> str:
     _check_env()
@@ -236,8 +346,13 @@ async def api_students():
             table_id=STUDENT_TABLE_ID,
             field_map=STUDENT_FIELDS,
         )
-    # Strip internal record_id before returning to front-end
-    return [{k: v for k, v in r.items() if k != "_record_id"} for r in rows]
+    normalized_rows = []
+    for row in rows:
+        public_row = {k: v for k, v in row.items() if k != "_record_id"}
+        normalized = _normalize_student_row(public_row)
+        if normalized is not None:
+            normalized_rows.append(normalized)
+    return normalized_rows
 
 @app.get("/api/points/events")
 async def api_events():
@@ -248,7 +363,13 @@ async def api_events():
             table_id=EVENT_TABLE_ID,
             field_map=EVENT_FIELDS,
         )
-    return [{k: v for k, v in r.items() if k != "_record_id"} for r in rows]
+    normalized_rows = []
+    for row in rows:
+        public_row = {k: v for k, v in row.items() if k != "_record_id"}
+        normalized = _normalize_event_row(public_row)
+        if normalized is not None:
+            normalized_rows.append(normalized)
+    return normalized_rows
 
 @app.post("/api/points/events")
 async def api_create_event(evt: EventCreate):
