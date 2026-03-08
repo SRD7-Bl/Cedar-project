@@ -1,0 +1,18 @@
+# Python virtual environment
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# macOS files
+.DS_Store
+
+# environment variables
+.env
+
+# node modules (如果未来有前端)
+node_modules/
+
+# logs
+*.log
