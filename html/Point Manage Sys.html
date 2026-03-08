@@ -462,8 +462,9 @@
   /*********************** 
    * Connect to the spreadsheet
    ***********************/
-  const API = "https://script.google.com/macros/s/AKfycbwhk23YntQ2bvr8fRjFuL1YZ-3LBAH_8HOq6NsDFdp1NUL02zAo6u2NkeQeG-Lf5HXj/exec";
+  const API = "http://localhost:8787/api/points";
 
+  /*
   async function loadStudents(){
     const r = await fetch(`${API}?action=students&t=${Date.now()}`);
     if(!r.ok) throw new Error(`students HTTP ${r.status}`);
@@ -489,6 +490,38 @@
       method: "POST",
       headers: {"Content-Type":"text/plain;charset=utf-8"},
       body: JSON.stringify({ action:"updateEvent", event_id, patch })
+    });
+    if(!r.ok) throw new Error(`updateEvent HTTP ${r.status}`);
+    return await r.json().catch(()=> ({}));
+  }
+  */
+  async function loadStudents(){
+    const r = await fetch(`${API}/students?t=${Date.now()}`);
+    if(!r.ok) throw new Error(`students HTTP ${r.status}`);
+    return await r.json();
+  }
+
+  async function loadEvents(){
+    const r = await fetch(`${API}/events?t=${Date.now()}`);
+    if(!r.ok) throw new Error(`events HTTP ${r.status}`);
+    return await r.json();
+  }
+
+  async function appendEventToSheet(e){
+    const r = await fetch(`${API}/events`, {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify(e)
+    });
+    if(!r.ok) throw new Error(`appendEvent HTTP ${r.status}`);
+    return await r.json().catch(()=> ({}));
+  }
+
+  async function updateEventInSheet(event_id, patch){
+    const r = await fetch(`${API}/events/${encodeURIComponent(event_id)}`, {
+      method: "PATCH",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify(patch)
     });
     if(!r.ok) throw new Error(`updateEvent HTTP ${r.status}`);
     return await r.json().catch(()=> ({}));
