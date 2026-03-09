@@ -1,11 +1,14 @@
 
 import os
+import sys
 import time
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import httpx
 from fastapi import FastAPI, HTTPException, Path as FPath
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, field_validator
 
 """
@@ -37,7 +40,7 @@ load_dotenv()
 FEISHU_APP_ID = os.getenv("FEISHU_APP_ID", "").strip()
 FEISHU_APP_SECRET = os.getenv("FEISHU_APP_SECRET", "").strip()
 POINT_APP_TOKEN = os.getenv("FEISHU_POINT_APP_TOKEN", "").strip()
-GOODS_APP_TOKEN = os.getenv("FEISHU_GOODS_APP_TOKEN", "").strip()
+GOODS_APP_TOKEN = os.getenv("FEISHU_GOODS_APP_TOKEN", "").strip() or POINT_APP_TOKEN
 STUDENT_TABLE_ID = os.getenv("FEISHU_STUDENT_TABLE_ID", "tbl6VArLeEuWaczs").strip()
 EVENT_TABLE_ID = os.getenv("FEISHU_EVENT_TABLE_ID", "tbl4rmvistECppMv").strip()
 GOODS_TABLE_ID = os.getenv("FEISHU_GOODS_TABLE_ID", "").strip()
@@ -72,6 +75,9 @@ ITEM_FIELDS = {
 }
 
 FEISHU_API_BASE = "https://open.feishu.cn/open-apis"
+BASE_DIR = Path(__file__).resolve().parent
+RUNTIME_DIR = Path(getattr(sys, "_MEIPASS", BASE_DIR))
+HTML_DIR = BASE_DIR / "html"
 
 app = FastAPI(title="Cedar Sys - Feishu Backend", version="0.2.0")
 
@@ -420,6 +426,13 @@ def _reverse_map(public_to_bitable: Dict[str, str]) -> Dict[str, str]:
     return {k: v for k, v in public_to_bitable.items()}
 
 
+def _html_response(filename: str) -> FileResponse:
+    file_path = (RUNTIME_DIR / "html" / filename) if getattr(sys, "frozen", False) else (HTML_DIR / filename)
+    if not file_path.exists():
+        raise HTTPException(status_code=500, detail=f"Missing HTML file: {filename}")
+    return FileResponse(file_path)
+
+
 async def find_record_id_by_field(
     client: httpx.AsyncClient,
     app_token: str,
@@ -458,6 +471,16 @@ async def find_record_id_by_field(
 @app.get("/health")
 async def health():
     return {"ok": True}
+
+
+@app.get("/app/pms", include_in_schema=False)
+async def app_pms():
+    return _html_response("Point Manage Sys.html")
+
+
+@app.get("/app/gms", include_in_schema=False)
+async def app_gms():
+    return _html_response("Good Manage Sys_LINKED_v2.html")
 
 @app.get("/api/points/students")
 async def api_students():
