@@ -830,7 +830,7 @@
     let cart = {};
 
     // points cache
-    /** @type {{id:string,name:string,grade:string,class:string,points:number}[]} */
+    /** @type {{id:string,name:string,grade:string,class:string,points:number,currentGrade?:number|null,currentGradeLabel?:string,cohortYear?:number|null}[]} */
     let pointStudents = [];
     /** @type {{event_id:string,time:string,student_id:string,delta:number,type:string,description:string,operator:string}[]} */
     let pointEvents = [];
@@ -925,6 +925,30 @@
       return await r.json().catch(()=> ({}));
     }
 
+    function parseCohortYear(gradeText){
+      const match = String(gradeText || "").match(/(\d{4})/);
+      return match ? Number(match[1]) : null;
+    }
+
+    function getAcademicStartYear(today = new Date()){
+      const year = today.getFullYear();
+      const rollover = new Date(year, 8, 1);
+      return today >= rollover ? year : year - 1;
+    }
+
+    function computeCurrentGradeFromCohort(cohortYear, today = new Date()){
+      if(!Number.isInteger(cohortYear)) return null;
+      return getAcademicStartYear(today) - cohortYear + 1;
+    }
+
+    function formatCurrentGradeLabel(currentGrade){
+      return Number.isInteger(currentGrade) ? `${currentGrade}年级` : "未知年级";
+    }
+
+    function sortableCurrentGrade(currentGrade){
+      return Number.isInteger(currentGrade) ? currentGrade : Number.POSITIVE_INFINITY;
+    }
+
     function rebuildPoints(){
       pointsById.clear();
       for(const s of pointStudents){
@@ -949,15 +973,17 @@
       shopStudentSelect.appendChild(opt0);
 
       const sorted = pointStudents.slice().sort((a,b)=> {
-        const ga = String(a.grade||"");
-        const gb = String(b.grade||"");
+        const gradeDiff = sortableCurrentGrade(a.currentGrade) - sortableCurrentGrade(b.currentGrade);
+        if(gradeDiff !== 0) return gradeDiff;
+        const ga = String(a.grade || "");
+        const gb = String(b.grade || "");
         if(ga !== gb) return ga.localeCompare(gb, "zh-Hans-CN", {numeric:true});
         return String(a.name||"").localeCompare(String(b.name||""), "zh-Hans-CN");
       });
       for(const s of sorted){
         const o = document.createElement("option");
         o.value = String(s.id);
-        o.textContent = `${s.grade} · ${s.name} · ${s.class} · ${s.points}分`;
+        o.textContent = `${s.currentGradeLabel} · ${s.name} · ${s.class} · ${s.grade} · ${s.points}分`;
         shopStudentSelect.appendChild(o);
       }
       if(cur) shopStudentSelect.value = cur;
@@ -974,18 +1000,26 @@
         shopStudentInfo.textContent = `ID ${sid}（未在本地缓存中找到）`;
         return;
       }
-      shopStudentInfo.textContent = `${s.grade} · ${s.class} · 当前积分：${s.points}`;
+      shopStudentInfo.textContent = `${s.currentGradeLabel} · ${s.class} · ${s.grade} · 当前积分：${s.points}`;
     }
 
     async function resyncPoint(){
       const [sRaw, eRaw] = await Promise.all([loadPointStudents(), loadPointEvents()]);
-      pointStudents = (sRaw || []).map(s => ({
-        id: String(s.id ?? s.student_id ?? ""),
-        name: String(s.name ?? ""),
-        grade: String(s.grade ?? ""),
-        class: String(s.class ?? ""),
-        points: Number(s.points ?? 0)
-      }));
+      pointStudents = (sRaw || []).map(s => {
+        const grade = String(s.grade ?? "");
+        const cohortYear = parseCohortYear(grade);
+        const currentGrade = computeCurrentGradeFromCohort(cohortYear);
+        return {
+          id: String(s.id ?? s.student_id ?? ""),
+          name: String(s.name ?? ""),
+          grade,
+          class: String(s.class ?? ""),
+          points: Number(s.points ?? 0),
+          cohortYear,
+          currentGrade,
+          currentGradeLabel: formatCurrentGradeLabel(currentGrade),
+        };
+      });
       pointEvents = (eRaw || []).map(e => ({
         event_id: String(e.event_id ?? ""),
         time: String(e.time ?? ""),

@@ -201,7 +201,7 @@
       <strong id="operatorName">Teacher</strong>
       <span class="muted">·</span>
       <span class="muted">当前年级</span>
-      <strong id="activeGradeLabel">G1</strong>
+      <strong id="activeGradeLabel">1年级</strong>
     </div>
   </div>
 </header>
@@ -222,7 +222,7 @@
       <div class="bd">
         <div class="controls">
           <div style="flex:1; min-width:220px;">
-            <input id="searchBox" type="search" placeholder="搜索：姓名 / 学号 / 班级（例如：G2-1）" />
+            <input id="searchBox" type="search" placeholder="搜索：姓名 / 学号 / 班级（例如：2班）" />
           </div>
           <button class="ghost" id="clearSearchBtn">清空</button>
         </div>
@@ -351,7 +351,12 @@
   /***********************
    * Demo data (in-memory)
    ***********************/
-  const gradeLabels = ["G1", "G2", "G3", "G4"];
+  const gradeTabs = [
+    { value: 1, label: "1年级" },
+    { value: 2, label: "2年级" },
+    { value: 3, label: "3年级" },
+    { value: 4, label: "4年级" },
+  ];
 
   // 你之后接 spreadsheet 时：students 从“读取接口”来，events 从“流水表”来
   let students = [];
@@ -368,7 +373,7 @@
   /***********************
    * State
    ***********************/
-  let activeGrade = "G1";
+  let activeGrade = 1;
   let selectedStudentId = null;
 
   /***********************
@@ -422,8 +427,41 @@
 
   function getStudentById(id){ return students.find(s => s.id === id) || null; } //通过id映射到学生
 
+  function parseCohortYear(gradeText){
+    const match = String(gradeText || "").match(/(\d{4})/);
+    return match ? Number(match[1]) : null;
+  }
+
+  function getAcademicStartYear(today = new Date()){
+    const year = today.getFullYear();
+    const rollover = new Date(year, 8, 1);
+    return today >= rollover ? year : year - 1;
+  }
+
+  function computeCurrentGradeFromCohort(cohortYear, today = new Date()){
+    if(!Number.isInteger(cohortYear)) return null;
+    return getAcademicStartYear(today) - cohortYear + 1;
+  }
+
+  function formatCurrentGradeLabel(currentGrade){
+    return Number.isInteger(currentGrade) ? `${currentGrade}年级` : "未知年级";
+  }
+
+  function isVisibleCurrentGrade(currentGrade){
+    return Number.isInteger(currentGrade) && currentGrade >= 1 && currentGrade <= 4;
+  }
+
+  function pickDefaultActiveGrade(){
+    const visibleGrades = [...new Set(
+      students
+        .map(s => s.currentGrade)
+        .filter(isVisibleCurrentGrade)
+    )].sort((a, b) => a - b);
+    return visibleGrades[0] ?? 1;
+  }
+
   function computeRanking(grade){ //根据年纪制定一个根据积分排名的rank
-    const arr = students.filter(s => s.grade === grade).slice();
+    const arr = students.filter(s => s.currentGrade === grade).slice();
     arr.sort((a,b)=> b.points - a.points || a.name.localeCompare(b.name));
     return arr;
   }
@@ -453,7 +491,7 @@
   function resetToSnapshot(){
     students = JSON.parse(JSON.stringify(snapshot.students));
     events = JSON.parse(JSON.stringify(snapshot.events));
-    activeGrade = "G1";
+    activeGrade = pickDefaultActiveGrade();
     selectedStudentId = null;
     searchBoxEl.value = "";
     renderAll();
@@ -544,7 +582,15 @@
         class: String(s.class),
         name: String(s.name),
         points: Number(s.points || 0),
-      }));
+        cohortYear: parseCohortYear(s.grade),
+      })).map(s => {
+        const currentGrade = computeCurrentGradeFromCohort(s.cohortYear);
+        return {
+          ...s,
+          currentGrade,
+          currentGradeLabel: formatCurrentGradeLabel(currentGrade),
+        };
+      });
 
       events = eArr.map(e => ({
         event_id: String(e.event_id),
@@ -558,6 +604,7 @@
 
       // 4) 重算 + 渲染
       rebuildPointsFromEvents();
+      activeGrade = pickDefaultActiveGrade();
       snapshot = initialSnapshot();
       renderAll();
 
@@ -580,32 +627,34 @@
    ***********************/
   function renderTabs(){
     gradeTabsEl.innerHTML = "";
-    gradeLabels.forEach(g => {
+    gradeTabs.forEach(({ value, label }) => {
       const btn = document.createElement("div");
-      btn.className = "tab" + (g === activeGrade ? " active" : "");
-      btn.textContent = g;
+      btn.className = "tab" + (value === activeGrade ? " active" : "");
+      btn.textContent = label;
       btn.onclick = () => {
-        activeGrade = g;
-        activeGradeLabelEl.textContent = g;
+        activeGrade = value;
+        activeGradeLabelEl.textContent = label;
         selectedStudentId = null;
         renderAll();
       };
       gradeTabsEl.appendChild(btn);
     });
-    activeGradeLabelEl.textContent = activeGrade;
+    activeGradeLabelEl.textContent = formatCurrentGradeLabel(activeGrade);
   }
 
   function renderStudentList(){ //渲染学生列表
     const q = searchBoxEl.value.trim().toLowerCase();
     //先筛选数据，确认要展示的学生有哪些：根据grade和搜索框进行筛选
     const list = students //在这里整合进了搜索框输入的东西进行filter
-      .filter(s => s.grade === activeGrade)
+      .filter(s => s.currentGrade === activeGrade)
       .filter(s => {
         if(!q) return true;
         return (
           s.name.toLowerCase().includes(q) ||
           s.id.toLowerCase().includes(q) ||
-          s.class.toLowerCase().includes(q)
+          s.class.toLowerCase().includes(q) ||
+          s.grade.toLowerCase().includes(q) ||
+          s.currentGradeLabel.toLowerCase().includes(q)
         );
       })
       .sort((a,b)=> b.points - a.points || a.name.localeCompare(b.name));
@@ -629,7 +678,7 @@
       const left = document.createElement("div");
       left.innerHTML = `
         <div class="name">${s.name}</div>
-        <div class="meta">${s.grade} · ${s.class} · ID ${s.id}</div>
+        <div class="meta">${s.currentGradeLabel} · ${s.class} · ${s.grade} · ID ${s.id}</div>
       `;
       const right = document.createElement("div");
       right.className = "score";
@@ -658,7 +707,7 @@
 
     //在已经搭好的html框架上填入name，point，id等信息
     selNameEl.textContent = s.name;
-    selMetaEl.textContent = `${s.grade} · ${s.class} · ID ${s.id}`;
+    selMetaEl.textContent = `${s.currentGradeLabel} · ${s.class} · ${s.grade} · ID ${s.id}`;
     selScoreEl.textContent = String(s.points);
 
     // ranking
@@ -673,7 +722,7 @@
           <div class="${badgeClass}">${idx+1}</div>
           <div>
             <div style="font-weight:800">${st.name}</div>
-            <div class="small muted">${st.class} · ID ${st.id}</div>
+            <div class="small muted">${st.class} · ${st.grade} · ID ${st.id}</div>
           </div>
         </div>
         <div class="score">${st.points}</div>
@@ -683,7 +732,7 @@
 
     // events table for grade
     // 这里和从studentlist里渲染思想一样，先从所有的point_event里筛选数据，然后根据每一条数据进行渲染
-    const gradeStudentIds = new Set(students.filter(x=>x.grade===activeGrade).map(x=>x.id));
+    const gradeStudentIds = new Set(students.filter(x=>x.currentGrade===activeGrade).map(x=>x.id));
     const rows = events
       .filter(e => gradeStudentIds.has(e.student_id))
       .slice()
